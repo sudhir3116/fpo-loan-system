@@ -1,14 +1,14 @@
-<<<<<<< HEAD
-node_modules
-dist
-.env.local
-.env.*.local
-*.log
-.DS_Store
-=======
 # Dependencies
 node_modules/
 backend/node_modules/
+frontend/node_modules/
+farmer-frontend/node_modules/
+
+# Production builds
+dist/
+build/
+frontend/dist/
+farmer-frontend/dist/
 
 # Environment variables & secrets
 .env
@@ -16,6 +16,13 @@ backend/node_modules/
 *.env
 backend/.env
 backend/.env.*
+frontend/.env
+frontend/.env.*
+farmer-frontend/.env
+farmer-frontend/.env.*
+!.env.example
+!*.env.example
+!**/.env.example
 *.save
 *.bak
 *.tmp
@@ -40,4 +47,3 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
->>>>>>> 0d6e250755c11d2c1f25dccf35bd0adb6a19003d

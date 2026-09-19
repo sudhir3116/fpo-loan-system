@@ -173,6 +173,7 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+
 }
 
 .borrower-cell-info {
@@ -219,4 +220,3 @@
 .amount-cell.zero {
   color: var(--text-muted);
 }
-
