@@ -1,10 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { User, LogOut, ChevronDown, Building2, ShieldCheck, Mail } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import './AdminProfile.css';
 
 const AdminProfile = ({ className = '' }) => {
+  const { t } = useTranslation();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
@@ -38,7 +40,7 @@ const AdminProfile = ({ className = '' }) => {
         </div>
         <div className="profile-info-compact">
           <span className="profile-name">{user?.name || 'Administrator'}</span>
-          <span className="profile-role-badge">FPO_ADMIN</span>
+          <span className="profile-role-badge">{t('header.fpoAdminRole')}</span>
         </div>
         <ChevronDown size={14} className={`chevron-icon ${isOpen ? 'rotate' : ''}`} />
       </button>
@@ -64,15 +66,15 @@ const AdminProfile = ({ className = '' }) => {
             <div className="fpo-detail-item">
               <Building2 size={15} className="fpo-detail-icon" />
               <div className="fpo-detail-text">
-                <span className="detail-label">FPO Organization</span>
-                <span className="detail-value">{user?.fpoName || 'Green Valley FPO'}</span>
+                <span className="detail-label">{t('farmers.columns.fpoAffiliation')}</span>
+                <span className="detail-value">{user?.fpoName || t('profile.defaultFpo')}</span>
               </div>
             </div>
 
             <div className="fpo-detail-item">
               <ShieldCheck size={15} className="fpo-detail-icon" />
               <div className="fpo-detail-text">
-                <span className="detail-label">Registration No</span>
+                <span className="detail-label">{t('reports.columns.regNo')}</span>
                 <span className="detail-value">{user?.fpoRegistrationNo || 'FPO-REG-2024'}</span>
               </div>
             </div>
@@ -82,7 +84,7 @@ const AdminProfile = ({ className = '' }) => {
 
           <button onClick={handleLogout} className="dropdown-logout-btn">
             <LogOut size={16} />
-            <span>Sign Out</span>
+            <span>{t('nav.signOut')}</span>
           </button>
         </div>
       )}

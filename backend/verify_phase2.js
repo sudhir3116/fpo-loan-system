@@ -86,7 +86,7 @@ async function runVerificationSuite() {
         phone: '9876543210',
         role: 'FARMER',
         fpoName: 'Green Valley Farmers Producer Co.',
-        address: { village: 'Khed', district: 'Pune', state: 'Maharashtra', pincode: '410505' },
+        address: { village: 'Perundurai', district: 'Erode', state: 'Tamil Nadu', pincode: '638052' },
       }),
     });
 

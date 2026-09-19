@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 import { Building2, Lock, Mail, ShieldAlert, ArrowRight, Eye, EyeOff, Loader2 } from 'lucide-react';
 import './Login.css';
 
 const Login = () => {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -88,16 +91,16 @@ const Login = () => {
 
   const validateForm = () => {
     if (!email.trim()) {
-      setFormError('Please enter your email address.');
+      setFormError(t('login.validation.emailRequired'));
       return false;
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email.trim())) {
-      setFormError('Please enter a valid email address format.');
+      setFormError(t('login.validation.emailInvalid'));
       return false;
     }
     if (!password) {
-      setFormError('Please enter your password.');
+      setFormError(t('login.validation.passwordRequired'));
       return false;
     }
     return true;
@@ -122,13 +125,17 @@ const Login = () => {
 
   return (
     <div className="login-container">
+      <div style={{ position: 'absolute', top: '20px', right: '20px', zIndex: 10 }}>
+        <LanguageSwitcher />
+      </div>
+
       <div className="login-card glass-panel">
         <div className="login-header">
           <div className="login-brand-icon">
             <Building2 size={28} />
           </div>
-          <h1>FPO Portal</h1>
-          <p>Farmer Producer Organization Credit Management</p>
+          <h1>{t('login.title')}</h1>
+          <p>{t('login.subtitle')}</p>
         </div>
 
         {displayError && (
@@ -143,7 +150,7 @@ const Login = () => {
         <form onSubmit={handleSubmit} className="login-form" noValidate>
           <div className="form-group">
             <label className="form-label" htmlFor="admin-email">
-              Email Address
+              {t('login.emailLabel')}
             </label>
             <div className="input-wrapper">
               <Mail size={18} className="input-icon" />
@@ -151,7 +158,7 @@ const Login = () => {
                 id="admin-email"
                 type="email"
                 className="form-input with-icon"
-                placeholder="you@example.com"
+                placeholder={t('login.emailPlaceholder')}
                 value={email}
                 onChange={(e) => {
                   setEmail(e.target.value);
@@ -166,7 +173,7 @@ const Login = () => {
 
           <div className="form-group">
             <label className="form-label" htmlFor="admin-password">
-              Password
+              {t('login.passwordLabel')}
             </label>
             <div className="input-wrapper">
               <Lock size={18} className="input-icon" />
@@ -174,7 +181,7 @@ const Login = () => {
                 id="admin-password"
                 type={showPassword ? 'text' : 'password'}
                 className="form-input with-icon with-eye"
-                placeholder="••••••••"
+                placeholder={t('login.passwordPlaceholder')}
                 value={password}
                 onChange={(e) => {
                   setPassword(e.target.value);
@@ -189,7 +196,7 @@ const Login = () => {
                 className="password-toggle-btn"
                 onClick={() => setShowPassword(!showPassword)}
                 tabIndex="-1"
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                aria-label={showPassword ? t('login.hidePassword') : t('login.showPassword')}
               >
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
@@ -200,11 +207,11 @@ const Login = () => {
             {loading ? (
               <>
                 <Loader2 size={18} className="spinner-icon" />
-                <span>Authenticating...</span>
+                <span>{t('login.authenticating')}</span>
               </>
             ) : (
               <>
-                <span>Sign In to Portal</span>
+                <span>{t('login.signInButton')}</span>
                 <ArrowRight size={18} />
               </>
             )}
@@ -220,7 +227,7 @@ const Login = () => {
         </div>
 
         <div className="login-footer">
-          <p>Authorized access for Farmer Members & FPO Administrators.</p>
+          <p>{t('login.footerText')}</p>
         </div>
       </div>
     </div>

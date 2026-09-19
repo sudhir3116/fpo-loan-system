@@ -1,21 +1,24 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Menu, Bell, Search, LogOut, CheckCheck } from 'lucide-react';
 import AdminProfile from './AdminProfile';
+import LanguageSwitcher from './LanguageSwitcher';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import './Header.css';
 
 const Header = ({ onToggleSidebar }) => {
+  const { t } = useTranslation();
   const { logout } = useAuth();
   const navigate = useNavigate();
   const [showNotifications, setShowNotifications] = useState(false);
   const notifRef = useRef(null);
 
-  // Mock notifications for UI shell indicator
+  // Notifications for UI shell indicator
   const notifications = [
-    { id: 1, title: 'New Loan Submitted', time: '10m ago', unread: true, link: '/admin/loans' },
-    { id: 2, title: 'Document Uploaded', time: '1h ago', unread: true, link: '/admin/loans' },
-    { id: 3, title: 'EMI Payment Recorded', time: '3h ago', unread: false, link: '/admin/repayments' },
+    { id: 1, title: t('notifications.items.newLoanSubmittedTitle'), time: `10 ${t('common.date')}`, unread: true, link: '/admin/loans' },
+    { id: 2, title: t('notifications.items.appUnderReviewTitle'), time: `1 ${t('common.date')}`, unread: true, link: '/admin/loans' },
+    { id: 3, title: t('notifications.items.overdueInstallmentTitle'), time: `3 ${t('common.date')}`, unread: false, link: '/admin/repayments' },
   ];
 
   const unreadCount = notifications.filter((n) => n.unread).length;
@@ -42,7 +45,7 @@ const Header = ({ onToggleSidebar }) => {
           type="button"
           className="mobile-sidebar-toggle-btn"
           onClick={onToggleSidebar}
-          aria-label="Toggle Navigation Menu"
+          aria-label={t('header.toggleMenu')}
         >
           <Menu size={20} />
         </button>
@@ -51,20 +54,22 @@ const Header = ({ onToggleSidebar }) => {
           <Search size={16} className="search-icon" />
           <input
             type="text"
-            placeholder="Search farmer, loan ID, or application..."
+            placeholder={t('header.searchPlaceholder')}
             className="header-search-input"
           />
         </div>
       </div>
 
       <div className="header-right-section">
+        <LanguageSwitcher />
+
         {/* Notification indicator & Popover */}
         <div className="notification-wrapper" ref={notifRef}>
           <button
             type="button"
             className={`header-action-btn ${showNotifications ? 'active' : ''}`}
             onClick={() => setShowNotifications(!showNotifications)}
-            aria-label="View Notifications"
+            aria-label={t('header.notificationsTitle')}
           >
             <Bell size={18} />
             {unreadCount > 0 && <span className="notification-badge">{unreadCount}</span>}
@@ -73,8 +78,8 @@ const Header = ({ onToggleSidebar }) => {
           {showNotifications && (
             <div className="notification-popover glass-panel">
               <div className="notif-header">
-                <h3>Notifications</h3>
-                <span className="notif-count-badge">{unreadCount} unread</span>
+                <h3>{t('header.notificationsTitle')}</h3>
+                <span className="notif-count-badge">{t('header.unreadBadge', { count: unreadCount })}</span>
               </div>
               <div className="notif-list">
                 {notifications.map((n) => (
@@ -99,7 +104,7 @@ const Header = ({ onToggleSidebar }) => {
                   className="view-all-notif-link"
                 >
                   <CheckCheck size={14} />
-                  <span>View All Alerts</span>
+                  <span>{t('header.viewAllAlerts')}</span>
                 </Link>
               </div>
             </div>
@@ -112,7 +117,7 @@ const Header = ({ onToggleSidebar }) => {
           type="button"
           onClick={handleLogout}
           className="header-action-btn logout-quick-btn"
-          title="Sign Out"
+          title={t('nav.signOut')}
         >
           <LogOut size={18} />
         </button>

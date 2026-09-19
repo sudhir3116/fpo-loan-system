@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ShieldCheck,
   CheckCircle2,
@@ -18,6 +19,7 @@ import { useToast } from './ToastContext';
 import './DocumentReview.css';
 
 const DocumentReview = ({ documents = [], onRefresh, className = '' }) => {
+  const { t, i18n } = useTranslation();
   const { showSuccess, showError } = useToast();
 
   const [activePreviewDoc, setActivePreviewDoc] = useState(null);
@@ -73,15 +75,15 @@ const DocumentReview = ({ documents = [], onRefresh, className = '' }) => {
       <div className="doc-review-header">
         <div className="header-title-group">
           <ShieldCheck size={20} className="text-emerald" />
-          <h3>Uploaded Verification Documents ({documents.length})</h3>
+          <h3>{t('documents.title')} ({documents.length})</h3>
         </div>
-        <span className="doc-subtext">Review farmer land records, identity, & bank statements</span>
+        <span className="doc-subtext">{t('documents.subtitle')}</span>
       </div>
 
       {documents.length === 0 ? (
         <div className="no-documents-placeholder">
           <FileText size={32} className="placeholder-icon" />
-          <p>No verification documents uploaded for this loan application yet.</p>
+          <p>{t('documents.noDocuments')}</p>
         </div>
       ) : (
         <div className="doc-review-grid">
@@ -103,7 +105,7 @@ const DocumentReview = ({ documents = [], onRefresh, className = '' }) => {
                   </h4>
                   <span className="doc-upload-date">
                     <Calendar size={12} />
-                    Uploaded: {new Date(doc.uploadedAt || doc.createdAt).toLocaleDateString('en-IN')}
+                    {t('documents.uploadDate')}: {new Date(doc.uploadedAt || doc.createdAt).toLocaleDateString('en-IN')}
                   </span>
                 </div>
 
@@ -111,7 +113,7 @@ const DocumentReview = ({ documents = [], onRefresh, className = '' }) => {
                 {isVerified && doc.verifiedBy && (
                   <div className="doc-audit-info verified">
                     <CheckCircle2 size={12} />
-                    <span>Verified by {doc.verifiedBy.name || 'Admin'}</span>
+                    <span>{t('status.VERIFIED')}: {doc.verifiedBy.name || 'Admin'}</span>
                   </div>
                 )}
 
@@ -119,7 +121,7 @@ const DocumentReview = ({ documents = [], onRefresh, className = '' }) => {
                   <div className="doc-audit-info rejected">
                     <AlertTriangle size={12} />
                     <span>
-                      <strong>Reason:</strong> {doc.rejectionReason}
+                      <strong>{t('documents.rejectionRemarksLabel')}:</strong> {doc.rejectionReason}
                     </span>
                   </div>
                 )}
@@ -131,10 +133,10 @@ const DocumentReview = ({ documents = [], onRefresh, className = '' }) => {
                     <button
                       onClick={() => setActivePreviewDoc(doc)}
                       className="btn btn-secondary doc-action-btn view-btn"
-                      title="Preview Document File"
+                      title={t('documents.previewBtn')}
                     >
                       <Eye size={13} />
-                      <span>Preview</span>
+                      <span>{t('documents.previewBtn')}</span>
                     </button>
                   )}
 
@@ -143,11 +145,11 @@ const DocumentReview = ({ documents = [], onRefresh, className = '' }) => {
                     <button
                       onClick={() => setActiveVerifyDoc(doc)}
                       className="btn doc-action-btn verify-btn"
-                      title="Verify Document"
+                      title={t('documents.verifyBtn')}
                       disabled={actionLoading}
                     >
                       <CheckCircle2 size={13} />
-                      <span>Verify</span>
+                      <span>{t('documents.verifyBtn')}</span>
                     </button>
                   )}
 
@@ -159,11 +161,11 @@ const DocumentReview = ({ documents = [], onRefresh, className = '' }) => {
                         setRejectionReason('');
                       }}
                       className="btn doc-action-btn reject-btn"
-                      title="Reject Document"
+                      title={t('documents.rejectBtn')}
                       disabled={actionLoading}
                     >
                       <XCircle size={13} />
-                      <span>Reject</span>
+                      <span>{t('documents.rejectBtn')}</span>
                     </button>
                   )}
                 </div>
@@ -220,7 +222,7 @@ const DocumentReview = ({ documents = [], onRefresh, className = '' }) => {
                 <span>Open Direct Cloudinary Link</span>
               </a>
               <button className="btn btn-secondary" onClick={() => setActivePreviewDoc(null)}>
-                Close Preview
+                {t('common.close')}
               </button>
             </div>
           </div>
@@ -231,9 +233,9 @@ const DocumentReview = ({ documents = [], onRefresh, className = '' }) => {
       <ConfirmDialog
         isOpen={!!activeVerifyDoc}
         type="success"
-        title="Verify Document?"
+        title={t('documents.verifyBtn')}
         message={`Mark '${activeVerifyDoc?.documentName}' (${activeVerifyDoc?.documentType}) as VERIFIED?`}
-        confirmText="Confirm Verification"
+        confirmText={t('documents.verifyBtn')}
         onConfirm={handleConfirmVerify}
         onCancel={() => setActiveVerifyDoc(null)}
         loading={actionLoading}
@@ -246,7 +248,7 @@ const DocumentReview = ({ documents = [], onRefresh, className = '' }) => {
             <div className="modal-header">
               <div className="preview-title-group">
                 <XCircle size={20} className="text-rose" />
-                <h3>Reject Document</h3>
+                <h3>{t('documents.rejectModalTitle')}</h3>
               </div>
               <button
                 className="modal-close-btn"
@@ -264,12 +266,12 @@ const DocumentReview = ({ documents = [], onRefresh, className = '' }) => {
 
               <div className="form-group">
                 <label className="form-label">
-                  Rejection Reason <span className="required-star">*</span>
+                  {t('documents.rejectionRemarksLabel')} <span className="required-star">*</span>
                 </label>
                 <textarea
                   className="form-textarea"
                   rows="3"
-                  placeholder="Specify reason for document rejection (e.g. Unclear illegible scan, Missing signature)..."
+                  placeholder={t('documents.rejectionRemarksPlaceholder')}
                   value={rejectionReason}
                   onChange={(e) => setRejectionReason(e.target.value)}
                   disabled={actionLoading}
@@ -284,14 +286,14 @@ const DocumentReview = ({ documents = [], onRefresh, className = '' }) => {
                 onClick={() => setActiveRejectDoc(null)}
                 disabled={actionLoading}
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 className="btn reject-confirm-btn"
                 onClick={handleConfirmReject}
                 disabled={actionLoading}
               >
-                {actionLoading ? 'Rejecting...' : 'Confirm Document Rejection'}
+                {actionLoading ? t('common.loading') : t('documents.confirmRejectBtn')}
               </button>
             </div>
           </div>

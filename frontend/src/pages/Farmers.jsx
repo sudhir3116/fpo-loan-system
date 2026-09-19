@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Users,
   Search,
@@ -25,10 +26,12 @@ import {
   LoadingSpinner,
   ErrorState,
   EmptyState,
+  CopyableId,
 } from '../components';
 import './Farmers.css';
 
 const Farmers = () => {
+  const { t, i18n } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [loans, setLoans] = useState([]);
@@ -94,8 +97,9 @@ const Farmers = () => {
           name: farmerObj.name || 'N/A',
           email: farmerObj.email || 'N/A',
           phone: farmerObj.phone || 'N/A',
-          fpoName: farmerObj.fpoName || 'Green Valley FPO',
+          fpoName: farmerObj.fpoName || t('profile.defaultFpo'),
           fpoRegistrationNo: farmerObj.fpoRegistrationNo || 'N/A',
+
           address: farmerObj.address || {},
           kycVerified: farmerObj.kycVerified ?? false,
           status: farmerObj.status || 'ACTIVE',
@@ -118,7 +122,7 @@ const Farmers = () => {
     });
 
     return Array.from(farmerMap.values());
-  }, [loans, documents]);
+  }, [loans, documents, t, i18n.language]);
 
   // Search & Filtered Farmers
   const filteredFarmers = useMemo(() => {
@@ -151,15 +155,15 @@ const Farmers = () => {
 
   // Format full address from User address schema
   const formatAddress = (addr) => {
-    if (!addr) return 'Address not specified';
+    if (!addr) return t('common.noData');
     const parts = [addr.village, addr.district, addr.state, addr.pincode].filter(Boolean);
-    return parts.length > 0 ? parts.join(', ') : 'Location not specified';
+    return parts.length > 0 ? parts.join(', ') : t('common.noData');
   };
 
   // Table Columns
   const columns = [
     {
-      header: 'Farmer Name',
+      header: t('farmers.columns.farmerName'),
       key: 'name',
       sortable: true,
       render: (item) => (
@@ -170,8 +174,8 @@ const Farmers = () => {
           <div className="farmer-name-group">
             <span className="farmer-name-text">{item.name}</span>
             {item.kycVerified && (
-              <span className="kyc-badge" title="KYC Verified">
-                <CheckCircle2 size={12} /> KYC Verified
+              <span className="kyc-badge" title={t('farmers.kycVerified')}>
+                <CheckCircle2 size={12} /> {t('farmers.kycVerified')}
               </span>
             )}
           </div>
@@ -179,7 +183,7 @@ const Farmers = () => {
       ),
     },
     {
-      header: 'Contact Details',
+      header: t('farmers.columns.contactInfo'),
       key: 'email',
       render: (item) => (
         <div className="contact-cell-group">
@@ -193,7 +197,7 @@ const Farmers = () => {
       ),
     },
     {
-      header: 'FPO & Location',
+      header: t('farmers.columns.fpoAffiliation'),
       key: 'fpoName',
       render: (item) => (
         <div className="location-cell-group">
@@ -207,17 +211,17 @@ const Farmers = () => {
       ),
     },
     {
-      header: 'Applications',
+      header: t('dashboard.totalApplications'),
       key: 'loans',
       align: 'center',
       render: (item) => (
         <span className="loan-count-badge">
-          {item.loans.length} {item.loans.length === 1 ? 'Application' : 'Applications'}
+          {item.loans.length} {t('nav.loanApplications')}
         </span>
       ),
     },
     {
-      header: 'Latest Status',
+      header: t('farmers.statusFilterLabel'),
       key: 'status',
       align: 'center',
       render: (item) => {
@@ -225,12 +229,12 @@ const Farmers = () => {
         return latestLoan ? (
           <StatusBadge status={latestLoan.status} />
         ) : (
-          <StatusBadge status="ACTIVE" customLabel="No Loans" />
+          <StatusBadge status="ACTIVE" customLabel={t('farmers.withNoLoans')} />
         );
       },
     },
     {
-      header: 'Member Since',
+      header: t('farmers.columns.registeredDate'),
       key: 'createdAt',
       render: (item) => (
         <span className="date-cell">
@@ -243,7 +247,7 @@ const Farmers = () => {
       ),
     },
     {
-      header: 'Actions',
+      header: t('common.actions'),
       key: 'actions',
       align: 'right',
       render: (item) => (
@@ -253,10 +257,10 @@ const Farmers = () => {
             setActiveModalTab('profile');
           }}
           className="btn btn-secondary view-farmer-btn"
-          title="View Full Profile & Loans"
+          title={t('farmers.viewProfile')}
         >
           <Eye size={15} />
-          <span>View Profile</span>
+          <span>{t('farmers.viewProfile')}</span>
         </button>
       ),
     },
@@ -265,12 +269,12 @@ const Farmers = () => {
   return (
     <div className="farmers-page-container">
       <PageHeader
-        title="Farmer Registry"
-        subtitle="Manage and evaluate registered farmer members, active credit profiles, and document history"
+        title={t('farmers.title')}
+        subtitle={t('farmers.subtitle')}
         actions={
           <button onClick={fetchData} className="btn btn-secondary refresh-btn" disabled={loading}>
             <RefreshCw size={16} className={loading ? 'spinning' : ''} />
-            <span>Refresh Data</span>
+            <span>{t('dashboard.refreshData')}</span>
           </button>
         }
       />
@@ -281,7 +285,7 @@ const Farmers = () => {
           <Search size={16} className="search-icon" />
           <input
             type="text"
-            placeholder="Search by farmer name, email, phone, or village..."
+            placeholder={t('farmers.searchPlaceholder')}
             value={searchTerm}
             onChange={(e) => {
               setSearchTerm(e.target.value);
@@ -293,7 +297,7 @@ const Farmers = () => {
 
         <div className="status-filter-wrapper">
           <label htmlFor="status-select" className="filter-label">
-            Loan Status Filter:
+            {t('farmers.statusFilterLabel')}
           </label>
           <select
             id="status-select"
@@ -304,13 +308,13 @@ const Farmers = () => {
             }}
             className="filter-select"
           >
-            <option value="ALL">All Application Statuses</option>
-            <option value="SUBMITTED">Submitted</option>
-            <option value="UNDER_REVIEW">Under Review</option>
-            <option value="APPROVED">Approved</option>
-            <option value="REJECTED">Rejected</option>
-            <option value="DISBURSED">Disbursed</option>
-            <option value="CLOSED">Closed</option>
+            <option value="ALL">{t('farmers.allStatuses')}</option>
+            <option value="SUBMITTED">{t('status.SUBMITTED')}</option>
+            <option value="UNDER_REVIEW">{t('status.UNDER_REVIEW')}</option>
+            <option value="APPROVED">{t('status.APPROVED')}</option>
+            <option value="REJECTED">{t('status.REJECTED')}</option>
+            <option value="DISBURSED">{t('status.DISBURSED')}</option>
+            <option value="CLOSED">{t('status.CLOSED')}</option>
           </select>
         </div>
       </div>
@@ -318,19 +322,15 @@ const Farmers = () => {
       {/* Main Content Area */}
       {loading ? (
         <div className="farmers-loading-container glass-panel">
-          <LoadingSpinner message="Fetching farmer profiles from FPO credit database..." />
+          <LoadingSpinner message={t('common.loading')} />
         </div>
       ) : error ? (
-        <ErrorState title="Failed to Load Farmers" message={error} onRetry={fetchData} />
+        <ErrorState title={t('errorState.defaultTitle')} message={error} onRetry={fetchData} />
       ) : filteredFarmers.length === 0 ? (
         <EmptyState
           icon={Users}
-          title="No Farmers Found"
-          description={
-            searchTerm || statusFilter !== 'ALL'
-              ? 'No registered farmer profiles matched your search or filter criteria.'
-              : 'There are currently no farmer members registered in the system.'
-          }
+          title={t('emptyState.defaultTitle')}
+          description={t('emptyState.defaultDesc')}
           action={
             (searchTerm || statusFilter !== 'ALL') && (
               <button
@@ -340,7 +340,7 @@ const Farmers = () => {
                 }}
                 className="btn btn-secondary"
               >
-                Clear Filters
+                {t('common.clearFilters')}
               </button>
             )
           }
@@ -379,7 +379,7 @@ const Farmers = () => {
                 <div>
                   <h2 className="modal-title">{selectedFarmer.name}</h2>
                   <span className="modal-subtitle">
-                    Member ID: {selectedFarmer._id.substring(0, 8)}... | Role: FARMER
+                    ID: <CopyableId id={selectedFarmer._id} /> | Role: FARMER
                   </span>
                 </div>
               </div>
@@ -399,21 +399,21 @@ const Farmers = () => {
                 onClick={() => setActiveModalTab('profile')}
               >
                 <User size={15} />
-                <span>Profile & FPO</span>
+                <span>{t('farmers.drawerTitle')}</span>
               </button>
               <button
                 className={`tab-btn ${activeModalTab === 'loans' ? 'active' : ''}`}
                 onClick={() => setActiveModalTab('loans')}
               >
                 <FileText size={15} />
-                <span>Loan History ({selectedFarmer.loans.length})</span>
+                <span>{t('farmers.loanHistory')} ({selectedFarmer.loans.length})</span>
               </button>
               <button
                 className={`tab-btn ${activeModalTab === 'documents' ? 'active' : ''}`}
                 onClick={() => setActiveModalTab('documents')}
               >
                 <ShieldCheck size={15} />
-                <span>Verification Documents ({selectedFarmer.documents.length})</span>
+                <span>{t('loanDetail.documentsSection')} ({selectedFarmer.documents.length})</span>
               </button>
             </div>
 
@@ -423,42 +423,42 @@ const Farmers = () => {
               {activeModalTab === 'profile' && (
                 <div className="tab-content profile-tab">
                   <div className="detail-section">
-                    <h3 className="section-title">Personal & Identity Information</h3>
+                    <h3 className="section-title">{t('farmers.personalDetails')}</h3>
                     <div className="detail-grid">
                       <div className="detail-field">
-                        <span className="field-label">Full Name</span>
+                        <span className="field-label">{t('farmers.columns.farmerName')}</span>
                         <span className="field-value">{selectedFarmer.name}</span>
                       </div>
                       <div className="detail-field">
-                        <span className="field-label">Email Address</span>
+                        <span className="field-label">{t('farmers.email')}</span>
                         <span className="field-value">{selectedFarmer.email}</span>
                       </div>
                       <div className="detail-field">
-                        <span className="field-label">Phone Number</span>
+                        <span className="field-label">{t('farmers.phone')}</span>
                         <span className="field-value">{selectedFarmer.phone}</span>
                       </div>
                       <div className="detail-field">
-                        <span className="field-label">KYC Verification Status</span>
+                        <span className="field-label">{t('farmers.kycStatus')}</span>
                         <span className="field-value">
                           {selectedFarmer.kycVerified ? (
                             <span className="text-emerald font-semibold inline-flex items-center gap-1">
-                              <CheckCircle2 size={14} /> Verified Member
+                              <CheckCircle2 size={14} /> {t('farmers.kycVerified')}
                             </span>
                           ) : (
                             <span className="text-amber font-semibold inline-flex items-center gap-1">
-                              <Clock size={14} /> Pending Verification
+                              <Clock size={14} /> {t('farmers.kycPending')}
                             </span>
                           )}
                         </span>
                       </div>
                       <div className="detail-field">
-                        <span className="field-label">Account Status</span>
+                        <span className="field-label">{t('common.status')}</span>
                         <span className="field-value">
                           <StatusBadge status={selectedFarmer.status} />
                         </span>
                       </div>
                       <div className="detail-field">
-                        <span className="field-label">Registration Date</span>
+                        <span className="field-label">{t('farmers.columns.registeredDate')}</span>
                         <span className="field-value">
                           {new Date(selectedFarmer.createdAt).toLocaleString('en-IN')}
                         </span>
@@ -467,18 +467,18 @@ const Farmers = () => {
                   </div>
 
                   <div className="detail-section">
-                    <h3 className="section-title">FPO Affiliation & Residential Address</h3>
+                    <h3 className="section-title">{t('farmers.columns.fpoAffiliation')}</h3>
                     <div className="detail-grid">
                       <div className="detail-field">
-                        <span className="field-label">FPO Name</span>
+                        <span className="field-label">{t('reports.columns.fpoName')}</span>
                         <span className="field-value">{selectedFarmer.fpoName}</span>
                       </div>
                       <div className="detail-field">
-                        <span className="field-label">FPO Registration No</span>
+                        <span className="field-label">{t('reports.columns.regNo')}</span>
                         <span className="field-value">{selectedFarmer.fpoRegistrationNo}</span>
                       </div>
                       <div className="detail-field col-span-2">
-                        <span className="field-label">Full Residential Address</span>
+                        <span className="field-label">{t('farmers.address')}</span>
                         <span className="field-value">{formatAddress(selectedFarmer.address)}</span>
                       </div>
                     </div>
@@ -492,8 +492,8 @@ const Farmers = () => {
                   {selectedFarmer.loans.length === 0 ? (
                     <EmptyState
                       icon={FileText}
-                      title="No Loan Applications"
-                      description="This farmer has not submitted any loan applications yet."
+                      title={t('farmers.noHistory')}
+                      description={t('emptyState.defaultDesc')}
                     />
                   ) : (
                     <div className="loans-list">
@@ -501,7 +501,9 @@ const Farmers = () => {
                         <div key={loan._id} className="loan-card-item glass-panel">
                           <div className="loan-card-header">
                             <div>
-                              <span className="loan-id-tag">Loan ID: {loan._id.substring(0, 10)}...</span>
+                              <div className="loan-id-tag">
+                                {t('loans.columns.loanId')}: <CopyableId id={loan._id} />
+                              </div>
                               <h4 className="loan-purpose-title">{loan.purpose}</h4>
                             </div>
                             <StatusBadge status={loan.status} />
@@ -509,22 +511,22 @@ const Farmers = () => {
 
                           <div className="loan-card-details">
                             <div className="loan-metric">
-                              <span className="metric-label">Loan Amount</span>
+                              <span className="metric-label">{t('loanDetail.requestedAmount')}</span>
                               <span className="metric-value font-highlight">
                                 ₹{loan.loanAmount?.toLocaleString('en-IN')}
                               </span>
                             </div>
                             <div className="loan-metric">
-                              <span className="metric-label">Tenure</span>
-                              <span className="metric-value">{loan.tenureMonths} Months</span>
+                              <span className="metric-label">{t('loans.columns.tenure')}</span>
+                              <span className="metric-value">{loan.tenureMonths} {t('loanDetail.tenureMonths', { months: '' })}</span>
                             </div>
                             <div className="loan-metric">
-                              <span className="metric-label">Interest Rate</span>
+                              <span className="metric-label">{t('loanDetail.interestRate')}</span>
                               <span className="metric-value">{loan.interestRate || 0}% p.a.</span>
                             </div>
                             {loan.disbursedAmount > 0 && (
                               <div className="loan-metric">
-                                <span className="metric-label">Disbursed Amount</span>
+                                <span className="metric-label">{t('loanDetail.disbursedAmount')}</span>
                                 <span className="metric-value text-indigo">
                                   ₹{loan.disbursedAmount?.toLocaleString('en-IN')}
                                 </span>
@@ -534,7 +536,7 @@ const Farmers = () => {
 
                           {loan.remarks && (
                             <div className="loan-remarks-box">
-                              <strong>Remarks:</strong> {loan.remarks}
+                              <strong>{t('loans.modals.remarksLabel')}:</strong> {loan.remarks}
                             </div>
                           )}
                         </div>
@@ -550,8 +552,8 @@ const Farmers = () => {
                   {selectedFarmer.documents.length === 0 ? (
                     <EmptyState
                       icon={ShieldCheck}
-                      title="No Documents Uploaded"
-                      description="No verification documents have been uploaded for this farmer yet."
+                      title={t('documents.noDocuments')}
+                      description={t('emptyState.defaultDesc')}
                     />
                   ) : (
                     <div className="docs-grid">
@@ -563,12 +565,12 @@ const Farmers = () => {
                           </div>
                           <h4 className="doc-name-title">{doc.documentName}</h4>
                           <span className="doc-date">
-                            Uploaded: {new Date(doc.uploadedAt || doc.createdAt).toLocaleDateString('en-IN')}
+                            {t('documents.uploadDate')}: {new Date(doc.uploadedAt || doc.createdAt).toLocaleDateString('en-IN')}
                           </span>
 
                           {doc.rejectionReason && (
                             <div className="doc-rejection-msg">
-                              <strong>Reason:</strong> {doc.rejectionReason}
+                              <strong>{t('documents.rejectionRemarksLabel')}:</strong> {doc.rejectionReason}
                             </div>
                           )}
 
@@ -580,7 +582,7 @@ const Farmers = () => {
                               className="btn btn-secondary view-doc-link"
                             >
                               <ExternalLink size={14} />
-                              <span>View Cloud Document</span>
+                              <span>{t('documents.previewBtn')}</span>
                             </a>
                           )}
                         </div>
@@ -593,7 +595,7 @@ const Farmers = () => {
 
             <div className="modal-footer">
               <button className="btn btn-secondary" onClick={() => setSelectedFarmer(null)}>
-                Close Profile
+                {t('common.close')}
               </button>
             </div>
           </div>

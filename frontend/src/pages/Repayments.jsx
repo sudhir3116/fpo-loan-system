@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   CreditCard,
   Search,
@@ -28,10 +29,12 @@ import {
   ErrorState,
   EmptyState,
   useToast,
+  CopyableId,
 } from '../components';
 import './Repayments.css';
 
 const Repayments = () => {
+  const { t, i18n } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const { showSuccess, showError } = useToast();
@@ -172,7 +175,7 @@ const Repayments = () => {
       closedLoansCount,
       overdueCount,
     };
-  }, [loans, repayments]);
+  }, [loans, repayments, t, i18n.language]);
 
   // Client-side Search & Overdue Filter
   const filteredRepayments = useMemo(() => {
@@ -195,7 +198,7 @@ const Repayments = () => {
 
       return matchesSearch && matchesOverdue;
     });
-  }, [repayments, searchTerm, overdueOnlyFilter]);
+  }, [repayments, searchTerm, overdueOnlyFilter, t, i18n.language]);
 
   // Handle opening Schedule Modal
   const handleOpenScheduleModal = async (loanObj) => {
@@ -277,21 +280,21 @@ const Repayments = () => {
   // Table Columns
   const columns = [
     {
-      header: 'Loan ID',
+      header: t('repayments.columns.loanId'),
       key: 'loan',
       render: (item) => {
         const loanIdStr = getLoanIdString(item.loan);
         const purpose = typeof item.loan === 'object' ? item.loan?.purpose : 'Crop Credit';
         return (
           <div className="loan-id-cell">
-            <span className="loan-id-code">#{loanIdStr ? loanIdStr.substring(0, 10) : 'N/A'}...</span>
+            <CopyableId id={loanIdStr} />
             <span className="purpose-subtext">{purpose || 'Crop Credit'}</span>
           </div>
         );
       },
     },
     {
-      header: 'Borrower Member',
+      header: t('repayments.columns.borrower'),
       key: 'borrower',
       render: (item) => {
         const borrowerName = typeof item.borrower === 'object' ? (item.borrower?.name || 'Farmer Member') : 'Farmer Member';
@@ -310,15 +313,15 @@ const Repayments = () => {
       },
     },
     {
-      header: 'Installment',
+      header: t('repayments.columns.installment'),
       key: 'installmentNumber',
       align: 'center',
       render: (item) => (
-        <span className="installment-tag">Installment #{item.installmentNumber || 1}</span>
+        <span className="installment-tag">{t('repayments.columns.installment')} #{item.installmentNumber || 1}</span>
       ),
     },
     {
-      header: 'Due Date',
+      header: t('repayments.columns.dueDate'),
       key: 'dueDate',
       sortable: true,
       render: (item) => (
@@ -332,7 +335,7 @@ const Repayments = () => {
       ),
     },
     {
-      header: 'Amount Due',
+      header: t('repayments.columns.amountDue'),
       key: 'amountDue',
       sortable: true,
       render: (item) => (
@@ -340,14 +343,14 @@ const Repayments = () => {
       ),
     },
     {
-      header: 'Amount Paid',
+      header: t('repayments.columns.amountPaid'),
       key: 'amountPaid',
       render: (item) => (
         <span className="amount-cell paid">₹{(Number(item.amountPaid) || 0).toLocaleString('en-IN')}</span>
       ),
     },
     {
-      header: 'Remaining',
+      header: t('repayments.columns.remaining'),
       key: 'remaining',
       render: (item) => {
         const due = Number(item.amountDue) || 0;
@@ -361,13 +364,13 @@ const Repayments = () => {
       },
     },
     {
-      header: 'Payment Status',
+      header: t('repayments.columns.paymentStatus'),
       key: 'paymentStatus',
       align: 'center',
       render: (item) => <StatusBadge status={item.paymentStatus} />,
     },
     {
-      header: 'Actions',
+      header: t('repayments.columns.actions'),
       key: 'actions',
       align: 'right',
       render: (item) => {
@@ -378,10 +381,10 @@ const Repayments = () => {
               <button
                 onClick={() => handleOpenScheduleModal(item.loan)}
                 className="btn btn-secondary action-btn view-schedule-btn"
-                title="View Complete Repayment Schedule for this Loan"
+                title={t('repayments.viewSchedule')}
               >
                 <Eye size={13} />
-                <span>Schedule</span>
+                <span>{t('repayments.viewSchedule')}</span>
               </button>
             )}
 
@@ -389,10 +392,10 @@ const Repayments = () => {
               <button
                 onClick={() => handleOpenPaymentModal(item)}
                 className="btn action-btn pay-btn"
-                title="Record Receipt Payment"
+                title={t('repayments.recordPay')}
               >
                 <CreditCard size={13} />
-                <span>Record Pay</span>
+                <span>{t('repayments.recordPay')}</span>
               </button>
             )}
           </div>
@@ -404,12 +407,12 @@ const Repayments = () => {
   return (
     <div className="repayments-page-container">
       <PageHeader
-        title="Repayments & EMI Tracking"
-        subtitle="Monitor installment collections, overdue payments, and record receipts grounded in backend data"
+        title={t('repayments.title')}
+        subtitle={t('repayments.subtitle')}
         actions={
           <button onClick={fetchData} className="btn btn-secondary refresh-btn" disabled={loading}>
             <RefreshCw size={16} className={loading ? 'spinning' : ''} />
-            <span>Refresh Repayments</span>
+            <span>{t('repayments.refreshRepayments')}</span>
           </button>
         }
       />
@@ -418,18 +421,18 @@ const Repayments = () => {
       <div className="metrics-overview-grid">
         <div className="metric-card glass-panel">
           <div className="metric-header">
-            <span className="metric-title">Total Disbursed Capital</span>
+            <span className="metric-title">{t('repayments.totalDisbursedCapital')}</span>
             <div className="metric-icon-box blue">
               <Banknote size={20} />
             </div>
           </div>
           <span className="metric-main-value">₹{summaryMetrics.totalDisbursed.toLocaleString('en-IN')}</span>
-          <span className="metric-footer-text">{summaryMetrics.activeLoansCount} Active Disbursed Loans</span>
+          <span className="metric-footer-text">{t('repayments.activeDisbursedLoans', { count: summaryMetrics.activeLoansCount })}</span>
         </div>
 
         <div className="metric-card glass-panel">
           <div className="metric-header">
-            <span className="metric-title">Total Repaid Collections</span>
+            <span className="metric-title">{t('repayments.totalRepaidCollections')}</span>
             <div className="metric-icon-box emerald">
               <TrendingUp size={20} />
             </div>
@@ -437,12 +440,12 @@ const Repayments = () => {
           <span className="metric-main-value text-emerald">
             ₹{summaryMetrics.totalRepaid.toLocaleString('en-IN')}
           </span>
-          <span className="metric-footer-text">{summaryMetrics.closedLoansCount} Fully Paid Off Loans</span>
+          <span className="metric-footer-text">{t('repayments.closedPaidLoans', { count: summaryMetrics.closedLoansCount })}</span>
         </div>
 
         <div className="metric-card glass-panel">
           <div className="metric-header">
-            <span className="metric-title">Total Outstanding Balance</span>
+            <span className="metric-title">{t('repayments.totalOutstandingBalance')}</span>
             <div className="metric-icon-box amber">
               <CreditCard size={20} />
             </div>
@@ -450,18 +453,18 @@ const Repayments = () => {
           <span className="metric-main-value text-amber">
             ₹{summaryMetrics.totalOutstanding.toLocaleString('en-IN')}
           </span>
-          <span className="metric-footer-text">Pending collection balance</span>
+          <span className="metric-footer-text">{t('repayments.pendingCollection')}</span>
         </div>
 
         <div className="metric-card glass-panel">
           <div className="metric-header">
-            <span className="metric-title">Overdue Installments</span>
+            <span className="metric-title">{t('repayments.overdueInstallments')}</span>
             <div className="metric-icon-box rose">
               <AlertCircle size={20} />
             </div>
           </div>
           <span className="metric-main-value text-rose">{summaryMetrics.overdueCount}</span>
-          <span className="metric-footer-text">Past-due unpaid installments</span>
+          <span className="metric-footer-text">{t('repayments.pastDueInstallments')}</span>
         </div>
       </div>
 
@@ -471,7 +474,7 @@ const Repayments = () => {
           <Search size={16} className="search-icon" />
           <input
             type="text"
-            placeholder="Search by Loan ID, Borrower Name, or Txn Ref..."
+            placeholder={t('repayments.searchPlaceholder')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="filter-search-input"
@@ -481,7 +484,7 @@ const Repayments = () => {
         <div className="filters-group">
           <div className="filter-item">
             <label htmlFor="repay-status-select" className="filter-label">
-              Payment Status:
+              {t('repayments.paymentStatusLabel')}
             </label>
             <select
               id="repay-status-select"
@@ -492,17 +495,17 @@ const Repayments = () => {
               }}
               className="filter-select"
             >
-              <option value="ALL">All Payment Statuses</option>
-              <option value="PENDING">Pending</option>
-              <option value="PARTIAL">Partial</option>
-              <option value="PAID">Paid</option>
-              <option value="OVERDUE">Overdue</option>
+              <option value="ALL">{t('repayments.allPaymentStatuses')}</option>
+              <option value="PENDING">{t('status.PENDING')}</option>
+              <option value="PARTIAL">{t('status.PARTIAL')}</option>
+              <option value="PAID">{t('status.PAID')}</option>
+              <option value="OVERDUE">{t('status.OVERDUE')}</option>
             </select>
           </div>
 
           <div className="filter-item">
             <label htmlFor="loan-select" className="filter-label">
-              Loan Application:
+              {t('repayments.loanAppLabel')}
             </label>
             <select
               id="loan-select"
@@ -513,7 +516,7 @@ const Repayments = () => {
               }}
               className="filter-select"
             >
-              <option value="ALL">All Loans</option>
+              <option value="ALL">{t('repayments.allLoans')}</option>
               {(loans || []).map((l) => {
                 if (!l) return null;
                 const loanIdStr = getLoanIdString(l);
@@ -535,7 +538,7 @@ const Repayments = () => {
               onChange={(e) => setOverdueOnlyFilter(e.target.checked)}
               className="checkbox-input"
             />
-            <span className="checkbox-text text-rose font-semibold">Overdue Only</span>
+            <span className="checkbox-text text-rose font-semibold">{t('repayments.overdueOnly')}</span>
           </label>
         </div>
       </div>
@@ -543,19 +546,15 @@ const Repayments = () => {
       {/* Repayments Table Section */}
       {loading ? (
         <div className="repayments-loading-container glass-panel">
-          <LoadingSpinner message="Fetching repayment records from backend database..." />
+          <LoadingSpinner message={t('common.loading')} />
         </div>
       ) : error ? (
-        <ErrorState title="Failed to Load Repayments" message={error} onRetry={fetchData} />
+        <ErrorState title={t('errorState.defaultTitle')} message={error} onRetry={fetchData} />
       ) : filteredRepayments.length === 0 ? (
         <EmptyState
           icon={CreditCard}
-          title="No Repayment Records Found"
-          description={
-            searchTerm || statusFilter !== 'ALL' || loanFilter !== 'ALL' || overdueOnlyFilter
-              ? 'No repayment installments matched your search or filter options.'
-              : 'There are currently no active repayment records generated.'
-          }
+          title={t('emptyState.defaultTitle')}
+          description={t('emptyState.defaultDesc')}
           action={
             (searchTerm || statusFilter !== 'ALL' || loanFilter !== 'ALL' || overdueOnlyFilter) && (
               <button
@@ -567,7 +566,7 @@ const Repayments = () => {
                 }}
                 className="btn btn-secondary"
               >
-                Clear Filters
+                {t('common.clearFilters')}
               </button>
             )
           }
@@ -599,11 +598,13 @@ const Repayments = () => {
                 <CreditCard size={22} className="text-emerald" />
                 <div>
                   <h3 className="modal-title">
-                    Repayment Schedule for Loan #{getLoanIdString(selectedScheduleLoan).substring(0, 10)}...
+                    {t('repayments.scheduleModal.title', { id: getLoanIdString(selectedScheduleLoan).substring(0, 10) })}
                   </h3>
                   <span className="modal-subtitle">
-                    Borrower: {selectedScheduleLoan.farmer?.name || 'Farmer'} | Purpose:{' '}
-                    {selectedScheduleLoan.purpose || 'Agricultural Loan'}
+                    {t('repayments.scheduleModal.subtitle', {
+                      name: selectedScheduleLoan.farmer?.name || 'Farmer',
+                      purpose: selectedScheduleLoan.purpose || 'Agricultural Loan',
+                    })}
                   </span>
                 </div>
               </div>
@@ -614,26 +615,26 @@ const Repayments = () => {
 
             <div className="modal-body">
               {scheduleLoading ? (
-                <LoadingSpinner message="Fetching full schedule..." />
+                <LoadingSpinner message={t('common.loading')} />
               ) : (scheduleRepayments || []).length === 0 ? (
                 <EmptyState
                   icon={Clock}
-                  title="No Schedule Generated"
-                  description="Repayment schedule is generated automatically when the loan is DISBURSED."
+                  title={t('repayments.scheduleModal.noSchedule')}
+                  description={t('emptyState.defaultDesc')}
                 />
               ) : (
                 <div className="schedule-table-wrapper">
                   <table className="schedule-table">
                     <thead>
                       <tr>
-                        <th>Installment #</th>
-                        <th>Due Date</th>
-                        <th>Amount Due</th>
-                        <th>Amount Paid</th>
-                        <th>Remaining</th>
-                        <th>Status</th>
-                        <th>Method / Txn</th>
-                        <th style={{ textAlign: 'right' }}>Action</th>
+                        <th>{t('repayments.columns.installment')}</th>
+                        <th>{t('repayments.columns.dueDate')}</th>
+                        <th>{t('repayments.columns.amountDue')}</th>
+                        <th>{t('repayments.columns.amountPaid')}</th>
+                        <th>{t('repayments.columns.remaining')}</th>
+                        <th>{t('repayments.columns.paymentStatus')}</th>
+                        <th>{t('repayments.payModal.methodLabel')}</th>
+                        <th style={{ textAlign: 'right' }}>{t('common.actions')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -644,7 +645,7 @@ const Repayments = () => {
                         const isPaid = (inst.paymentStatus || '').toUpperCase() === 'PAID';
                         return (
                           <tr key={inst._id || inst.installmentNumber}>
-                            <td className="font-semibold">Installment #{inst.installmentNumber}</td>
+                            <td className="font-semibold">{t('repayments.columns.installment')} #{inst.installmentNumber}</td>
                             <td>{inst.dueDate ? new Date(inst.dueDate).toLocaleDateString('en-IN') : 'N/A'}</td>
                             <td className="font-semibold text-emerald">
                               ₹{due.toLocaleString('en-IN')}
@@ -669,9 +670,9 @@ const Repayments = () => {
                                 <button
                                   onClick={() => handleOpenPaymentModal(inst)}
                                   className="btn action-btn pay-btn"
-                                  title="Record Payment"
+                                  title={t('repayments.recordPay')}
                                 >
-                                  <CreditCard size={12} /> Pay
+                                  <CreditCard size={12} /> {t('repayments.recordPay')}
                                 </button>
                               )}
                             </td>
@@ -686,7 +687,7 @@ const Repayments = () => {
 
             <div className="modal-footer">
               <button className="btn btn-secondary" onClick={() => setSelectedScheduleLoan(null)}>
-                Close Schedule
+                {t('repayments.scheduleModal.close')}
               </button>
             </div>
           </div>
@@ -700,7 +701,7 @@ const Repayments = () => {
             <div className="modal-header">
               <div className="title-wrapper">
                 <CreditCard size={22} className="text-emerald" />
-                <h3>Record Installment Receipt Payment</h3>
+                <h3>{t('repayments.payModal.title')}</h3>
               </div>
               <button
                 className="modal-close-btn"
@@ -713,15 +714,17 @@ const Repayments = () => {
 
             <div className="modal-body">
               <p className="payment-intro">
-                Recording receipt for <strong>Installment #{selectedPaymentInst.installmentNumber || 1}</strong> (Due Date:{' '}
-                {selectedPaymentInst.dueDate ? new Date(selectedPaymentInst.dueDate).toLocaleDateString('en-IN') : 'N/A'}, Amount Due: ₹
-                {(Number(selectedPaymentInst.amountDue) || 0).toLocaleString('en-IN')})
+                {t('repayments.payModal.intro', {
+                  inst: selectedPaymentInst.installmentNumber || 1,
+                  date: selectedPaymentInst.dueDate ? new Date(selectedPaymentInst.dueDate).toLocaleDateString('en-IN') : 'N/A',
+                  amount: (Number(selectedPaymentInst.amountDue) || 0).toLocaleString('en-IN'),
+                })}
               </p>
 
               <div className="form-grid">
                 <div className="form-group">
                   <label htmlFor="pay-amount" className="form-label">
-                    Amount Paid (₹) <span className="required-star">*</span>
+                    {t('repayments.payModal.amountPaidLabel')} <span className="required-star">*</span>
                   </label>
                   <input
                     id="pay-amount"
@@ -736,14 +739,15 @@ const Repayments = () => {
                     required
                   />
                   <span className="input-hint">
-                    Remaining Due: ₹
-                    {Math.max(0, (Number(selectedPaymentInst.amountDue) || 0) - (Number(selectedPaymentInst.amountPaid) || 0)).toLocaleString('en-IN')}
+                    {t('repayments.payModal.remainingDue', {
+                      amount: Math.max(0, (Number(selectedPaymentInst.amountDue) || 0) - (Number(selectedPaymentInst.amountPaid) || 0)).toLocaleString('en-IN'),
+                    })}
                   </span>
                 </div>
 
                 <div className="form-group">
                   <label htmlFor="pay-method" className="form-label">
-                    Payment Method
+                    {t('repayments.payModal.methodLabel')}
                   </label>
                   <select
                     id="pay-method"
@@ -752,23 +756,23 @@ const Repayments = () => {
                     onChange={(e) => setPaymentForm({ ...paymentForm, paymentMethod: e.target.value })}
                     disabled={paymentLoading}
                   >
-                    <option value="BANK_TRANSFER">Bank Transfer (NEFT/RTGS)</option>
-                    <option value="UPI">UPI Digital Payment</option>
-                    <option value="CASH">Cash Collection</option>
-                    <option value="CHEQUE">Cheque Receipt</option>
-                    <option value="OTHER">Other Channel</option>
+                    <option value="BANK_TRANSFER">{t('repayments.payModal.bankTransfer')}</option>
+                    <option value="UPI">{t('repayments.payModal.upi')}</option>
+                    <option value="CASH">{t('repayments.payModal.cash')}</option>
+                    <option value="CHEQUE">{t('repayments.payModal.cheque')}</option>
+                    <option value="OTHER">{t('repayments.payModal.other')}</option>
                   </select>
                 </div>
 
                 <div className="form-group col-span-2">
                   <label htmlFor="pay-txn" className="form-label">
-                    Transaction Reference Number
+                    {t('repayments.payModal.txnRefLabel')}
                   </label>
                   <input
                     id="pay-txn"
                     type="text"
                     className="form-input"
-                    placeholder="Enter UPI Txn ID, Bank Ref No, or Cheque No..."
+                    placeholder={t('repayments.payModal.txnRefPlaceholder')}
                     value={paymentForm.transactionReference}
                     onChange={(e) =>
                       setPaymentForm({ ...paymentForm, transactionReference: e.target.value })
@@ -779,13 +783,13 @@ const Repayments = () => {
 
                 <div className="form-group col-span-2">
                   <label htmlFor="pay-remarks" className="form-label">
-                    Receipt Remarks
+                    {t('repayments.payModal.remarksLabel')}
                   </label>
                   <textarea
                     id="pay-remarks"
                     className="form-textarea"
                     rows="2"
-                    placeholder="Enter receipt notes..."
+                    placeholder={t('repayments.payModal.remarksPlaceholder')}
                     value={paymentForm.remarks}
                     onChange={(e) => setPaymentForm({ ...paymentForm, remarks: e.target.value })}
                     disabled={paymentLoading}
@@ -800,14 +804,14 @@ const Repayments = () => {
                 onClick={() => setSelectedPaymentInst(null)}
                 disabled={paymentLoading}
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 className="btn pay-confirm-btn"
                 onClick={handleConfirmPayment}
                 disabled={paymentLoading}
               >
-                {paymentLoading ? 'Recording Payment...' : 'Confirm Receipt Payment'}
+                {paymentLoading ? t('repayments.payModal.recording') : t('repayments.payModal.confirmBtn')}
               </button>
             </div>
           </div>

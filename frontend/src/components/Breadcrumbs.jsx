@@ -1,19 +1,21 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ChevronRight, Home } from 'lucide-react';
 import './Breadcrumbs.css';
 
-const PATH_NAME_MAP = {
-  admin: 'Admin Portal',
-  dashboard: 'Dashboard',
-  farmers: 'Farmer Registry',
-  loans: 'Loan Applications',
-  repayments: 'Repayments & EMI',
-  reports: 'Financial Reports',
-  notifications: 'Notifications & Alerts',
+const PATH_NAME_KEYS = {
+  admin: 'nav.home',
+  dashboard: 'nav.dashboard',
+  farmers: 'nav.farmers',
+  loans: 'nav.loanApplications',
+  repayments: 'nav.repayments',
+  reports: 'nav.reports',
+  notifications: 'nav.notifications',
 };
 
 const Breadcrumbs = ({ items }) => {
+  const { t, i18n } = useTranslation();
   const location = useLocation();
 
   // If custom items passed, use them, otherwise generate from path
@@ -26,7 +28,12 @@ const Breadcrumbs = ({ items }) => {
     let currentPath = '';
     pathSegments.forEach((segment, index) => {
       currentPath += `/${segment}`;
-      const label = PATH_NAME_MAP[segment] || (segment.length > 15 ? `${segment.substring(0, 12)}...` : segment);
+      const translationKey = PATH_NAME_KEYS[segment];
+      const label = translationKey
+        ? t(translationKey)
+        : segment.length > 15
+        ? `${segment.substring(0, 12)}...`
+        : segment;
       generated.push({
         label,
         path: currentPath,
@@ -35,7 +42,7 @@ const Breadcrumbs = ({ items }) => {
     });
 
     return generated;
-  }, [items, location.pathname]);
+  }, [items, location.pathname, t, i18n.language]);
 
   if (breadcrumbItems.length <= 1) return null;
 
@@ -43,7 +50,7 @@ const Breadcrumbs = ({ items }) => {
     <nav className="breadcrumbs-container" aria-label="Breadcrumb">
       <ol className="breadcrumbs-list">
         <li className="breadcrumb-item">
-          <Link to="/admin/dashboard" className="breadcrumb-link home-link" aria-label="Home">
+          <Link to="/admin/dashboard" className="breadcrumb-link home-link" aria-label={t('nav.home')}>
             <Home size={14} />
           </Link>
         </li>

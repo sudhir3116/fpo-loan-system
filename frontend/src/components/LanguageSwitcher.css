@@ -1,0 +1,117 @@
+.language-switcher-root {
+  position: relative;
+  display: inline-block;
+}
+
+.language-switcher-trigger {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 6px 12px;
+  color: var(--text-primary, #f8fafc);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.language-switcher-trigger:hover,
+.language-switcher-trigger.active {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(16, 185, 129, 0.4);
+}
+
+.language-switcher-trigger .globe-icon {
+  color: #10b981;
+}
+
+.language-switcher-trigger .chevron-icon {
+  color: #94a3b8;
+  transition: transform 0.2s ease;
+}
+
+.language-switcher-trigger .chevron-icon.open {
+  transform: rotate(180deg);
+}
+
+.language-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 180px;
+  background: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  padding: 6px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  animation: fadeInDown 0.15s ease-out;
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.language-dropdown-menu .dropdown-header {
+  padding: 6px 10px 8px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 4px;
+}
+
+.language-option-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s ease;
+}
+
+.language-option-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.language-option-btn.selected {
+  background: rgba(16, 185, 129, 0.15);
+}
+
+.lang-name-box {
+  display: flex;
+  flex-direction: column;
+}
+
+.lang-main-label {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #f1f5f9;
+}
+
+.lang-sub-label {
+  font-size: 0.72rem;
+  color: #94a3b8;
+}
+
+.language-option-btn .check-icon {
+  color: #10b981;
+}

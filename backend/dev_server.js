@@ -10,65 +10,65 @@ async function seedRealisticData(adminUser) {
 
   // 1. Create Farmer Accounts
   const farmer1 = await User.create({
-    name: 'Ramesh Patel',
-    email: 'ramesh.patel@farmer.org',
+    name: 'Arun Kumar',
+    email: 'arun.kumar@farmer.org',
     password: 'Password@123',
     phone: '9876543210',
     role: 'FARMER',
-    fpoName: 'Green Valley Farmers Producer Co.',
-    fpoRegistrationNo: 'FPO-MH-2024-001',
-    address: { village: 'Khed', district: 'Pune', state: 'Maharashtra', pincode: '410505' },
+    fpoName: 'Erode Farmers Producer Company',
+    fpoRegistrationNo: 'FPO-TN-2024-001',
+    address: { village: 'Perundurai', district: 'Erode', state: 'Tamil Nadu', pincode: '638052' },
     kycVerified: true,
     status: 'ACTIVE',
   });
 
   const farmer2 = await User.create({
-    name: 'Sita Devi',
-    email: 'sita.devi@farmer.org',
+    name: 'Priya',
+    email: 'priya@farmer.org',
     password: 'Password@123',
     phone: '9876500001',
     role: 'FARMER',
-    fpoName: 'Green Valley Farmers Producer Co.',
-    fpoRegistrationNo: 'FPO-MH-2024-001',
-    address: { village: 'Baramati', district: 'Pune', state: 'Maharashtra', pincode: '413102' },
+    fpoName: 'Erode Farmers Producer Company',
+    fpoRegistrationNo: 'FPO-TN-2024-001',
+    address: { village: 'Bhavani', district: 'Erode', state: 'Tamil Nadu', pincode: '638301' },
     kycVerified: true,
     status: 'ACTIVE',
   });
 
   const farmer3 = await User.create({
-    name: 'Vikram Singh',
-    email: 'vikram.singh@farmer.org',
+    name: 'Senthil Kumar',
+    email: 'senthil.kumar@farmer.org',
     password: 'Password@123',
     phone: '9988776655',
     role: 'FARMER',
-    fpoName: 'Sahyadri Agri Farmers Producer Co.',
-    fpoRegistrationNo: 'FPO-MH-2024-002',
-    address: { village: 'Wai', district: 'Satara', state: 'Maharashtra', pincode: '412803' },
+    fpoName: 'Kongu Farmers Producer Organisation',
+    fpoRegistrationNo: 'FPO-TN-2024-002',
+    address: { village: 'Pollachi', district: 'Coimbatore', state: 'Tamil Nadu', pincode: '642001' },
     kycVerified: true,
     status: 'ACTIVE',
   });
 
   const farmer4 = await User.create({
-    name: 'Anita Sharma',
-    email: 'anita.sharma@farmer.org',
+    name: 'Karthik',
+    email: 'karthik@farmer.org',
     password: 'Password@123',
     phone: '9822334455',
     role: 'FARMER',
-    fpoName: 'Sahyadri Agri Farmers Producer Co.',
-    fpoRegistrationNo: 'FPO-MH-2024-002',
-    address: { village: 'Pimpalgaon', district: 'Nashik', state: 'Maharashtra', pincode: '422209' },
+    fpoName: 'Kongu Farmers Producer Organisation',
+    fpoRegistrationNo: 'FPO-TN-2024-002',
+    address: { village: 'Attur', district: 'Salem', state: 'Tamil Nadu', pincode: '636102' },
     kycVerified: false,
     status: 'ACTIVE',
   });
 
   // 2. Create Loans across all status states
 
-  // Loan 1: DISBURSED for Ramesh Patel (12 Months, ₹1,00,000)
+  // Loan 1: DISBURSED for Arun Kumar (12 Months, ₹1,00,000)
   const loan1 = await Loan.create({
     farmer: farmer1._id,
     loanAmount: 100000,
     disbursedAmount: 100000,
-    purpose: 'Solar Drip Irrigation System Installation',
+    purpose: 'Turmeric Cultivation & Drip Irrigation System',
     interestRate: 6,
     tenureMonths: 12,
     repaymentFrequency: 'MONTHLY',
@@ -104,12 +104,12 @@ async function seedRealisticData(adminUser) {
     await repayments1[2].save();
   }
 
-  // Loan 2: DISBURSED for Sita Devi (6 Months, ₹60,000)
+  // Loan 2: DISBURSED for Priya (6 Months, ₹60,000)
   const loan2 = await Loan.create({
     farmer: farmer2._id,
     loanAmount: 60000,
     disbursedAmount: 60000,
-    purpose: 'High-Yield Wheat Seeds & Organic Fertilizers',
+    purpose: 'High-Yield Paddy Seeds & Organic Fertilizers',
     interestRate: 4.5,
     tenureMonths: 6,
     repaymentFrequency: 'MONTHLY',
@@ -135,12 +135,12 @@ async function seedRealisticData(adminUser) {
     await repayments2[1].save();
   }
 
-  // Loan 3: CLOSED for Vikram Singh (3 Months, ₹40,000)
+  // Loan 3: CLOSED for Senthil Kumar (3 Months, ₹40,000)
   const loan3 = await Loan.create({
     farmer: farmer3._id,
     loanAmount: 40000,
     disbursedAmount: 40000,
-    purpose: 'Crop Harvesting Equipment Repair',
+    purpose: 'Sugarcane Harvesting Equipment Repair',
     interestRate: 5,
     tenureMonths: 3,
     repaymentFrequency: 'MONTHLY',
@@ -158,11 +158,11 @@ async function seedRealisticData(adminUser) {
     await r.save();
   }
 
-  // Loan 4: APPROVED for Anita Sharma (Awaiting Disbursement)
+  // Loan 4: APPROVED for Karthik (Awaiting Disbursement)
   await Loan.create({
     farmer: farmer4._id,
     loanAmount: 150000,
-    purpose: 'Polyhouse Net Installation & Micro-Sprinklers',
+    purpose: 'Polyhouse Vegetable Farming & Micro-Sprinklers',
     interestRate: 7,
     tenureMonths: 18,
     repaymentFrequency: 'MONTHLY',
@@ -171,11 +171,11 @@ async function seedRealisticData(adminUser) {
     remarks: 'Approved by FPO Credit Committee.',
   });
 
-  // Loan 5: UNDER_REVIEW for Ramesh Patel
+  // Loan 5: UNDER_REVIEW for Arun Kumar
   await Loan.create({
     farmer: farmer1._id,
     loanAmount: 85000,
-    purpose: 'Tractor Attachments & Soil Testing Gear',
+    purpose: 'Coconut Plantation Soil Testing Gear',
     interestRate: 6,
     tenureMonths: 12,
     repaymentFrequency: 'MONTHLY',
@@ -183,18 +183,18 @@ async function seedRealisticData(adminUser) {
     remarks: 'Pending land title verification check.',
   });
 
-  // Loan 6: SUBMITTED for Sita Devi
+  // Loan 6: SUBMITTED for Priya
   await Loan.create({
     farmer: farmer2._id,
     loanAmount: 35000,
-    purpose: 'Crop Cold Storage & Grain Packaging',
+    purpose: 'Banana Crop Cold Storage & Grain Packaging',
     interestRate: 5,
     tenureMonths: 12,
     repaymentFrequency: 'MONTHLY',
     status: 'SUBMITTED',
   });
 
-  // Loan 7: REJECTED for Vikram Singh
+  // Loan 7: REJECTED for Senthil Kumar
   await Loan.create({
     farmer: farmer3._id,
     loanAmount: 250000,
@@ -212,7 +212,7 @@ async function seedRealisticData(adminUser) {
     loan: loan1._id,
     user: farmer1._id,
     documentType: 'LAND_RECORD',
-    documentName: 'Khed_7-12_Land_Record.pdf',
+    documentName: 'Perundurai_Patta_Chitta_Record.pdf',
     fileUrl: 'https://res.cloudinary.com/demo/image/upload/v1/fpo_docs/land_712.pdf',
     status: 'VERIFIED',
   });
@@ -221,7 +221,7 @@ async function seedRealisticData(adminUser) {
     loan: loan2._id,
     user: farmer2._id,
     documentType: 'ID_PROOF',
-    documentName: 'Sita_Devi_Aadhar_Card.pdf',
+    documentName: 'Priya_Aadhar_Card.pdf',
     fileUrl: 'https://res.cloudinary.com/demo/image/upload/v1/fpo_docs/aadhar.pdf',
     status: 'VERIFIED',
   });
@@ -230,11 +230,12 @@ async function seedRealisticData(adminUser) {
     loan: loan3._id,
     user: farmer3._id,
     documentType: 'FPO_MEMBERSHIP',
-    documentName: 'Sahyadri_FPO_Member_Certificate.pdf',
+    documentName: 'Kongu_FPO_Member_Certificate.pdf',
     fileUrl: 'https://res.cloudinary.com/demo/image/upload/v1/fpo_docs/fpo_cert.pdf',
     status: 'REJECTED',
     rejectionReason: 'Illegible signature on page 2.',
   });
+
 
   console.log('✔ Realistic FPO dataset seeded successfully (Farmers, Loans, Repayments, Documents)');
 }

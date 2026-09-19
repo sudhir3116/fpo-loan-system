@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Clock,
   Search,
@@ -39,6 +40,7 @@ const STATUS_CONFIG = {
 };
 
 const StatusBadge = ({ status, customLabel, size = 'medium', className = '' }) => {
+  const { t } = useTranslation();
   const normalizedStatus = (status || '').toUpperCase();
   const config = STATUS_CONFIG[normalizedStatus] || {
     label: status || 'Unknown',
@@ -47,11 +49,12 @@ const StatusBadge = ({ status, customLabel, size = 'medium', className = '' }) =
   };
 
   const Icon = config.icon;
+  const translatedLabel = customLabel || t(`status.${normalizedStatus}`, config.label);
 
   return (
     <span className={`status-badge badge-${config.color} badge-${size} ${className}`}>
       {Icon && <Icon className="badge-icon" size={size === 'small' ? 12 : 14} />}
-      <span className="badge-text">{customLabel || config.label}</span>
+      <span className="badge-text">{translatedLabel}</span>
     </span>
   );
 };

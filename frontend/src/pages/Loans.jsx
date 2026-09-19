@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   FileText,
   Search,
@@ -25,10 +26,12 @@ import {
   EmptyState,
   ConfirmDialog,
   useToast,
+  CopyableId,
 } from '../components';
 import './Loans.css';
 
 const Loans = () => {
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const { showSuccess, showError } = useToast();
@@ -117,14 +120,14 @@ const Loans = () => {
 
       return matchesSearch && matchesAmount;
     });
-  }, [loans, searchTerm, amountFilter]);
+  }, [loans, searchTerm, amountFilter, t, i18n.language]);
 
   // State Transition Handlers
   const handleOpenActionModal = (loan, actionType) => {
     setSelectedLoan(loan);
     setActiveActionModal(actionType);
     setActionForm({
-      interestRate: loan.interestRate || 0,
+      interestRate: loan.interestRate || 7.5,
       tenureMonths: loan.tenureMonths || 12,
       disbursedAmount: loan.loanAmount || 0,
       remarks: '',
@@ -134,50 +137,48 @@ const Loans = () => {
   const handleCloseActionModal = () => {
     setActiveActionModal(null);
     setSelectedLoan(null);
-    setActionLoading(false);
+    setActionForm({ interestRate: 0, tenureMonths: 12, disbursedAmount: 0, remarks: '' });
   };
 
   const handleExecuteAction = async () => {
-    if (!selectedLoan) return;
+    if (!selectedLoan || actionLoading) return;
     setActionLoading(true);
 
     try {
+      let response;
       if (activeActionModal === 'under-review') {
-        await loanAPI.markUnderReview(selectedLoan._id);
-        showSuccess(`Loan application #${selectedLoan._id.substring(0, 8)} marked UNDER REVIEW`);
+        response = await loanAPI.markUnderReview(selectedLoan._id);
+        showSuccess(response.data?.message || 'Loan status updated to UNDER_REVIEW');
       } else if (activeActionModal === 'approve') {
-        await loanAPI.approveLoan(selectedLoan._id, {
+        response = await loanAPI.approveLoan(selectedLoan._id, {
+          approvedAmount: selectedLoan.loanAmount,
           interestRate: Number(actionForm.interestRate),
           tenureMonths: Number(actionForm.tenureMonths),
           remarks: actionForm.remarks,
         });
-        showSuccess(`Loan application #${selectedLoan._id.substring(0, 8)} successfully APPROVED`);
+        showSuccess(response.data?.message || 'Loan application APPROVED');
       } else if (activeActionModal === 'reject') {
         if (!actionForm.remarks.trim()) {
-          showError('Rejection remarks are mandatory.');
+          showError('Rejection remarks are mandatory');
           setActionLoading(false);
           return;
         }
-        await loanAPI.rejectLoan(selectedLoan._id, {
-          remarks: actionForm.remarks.trim(),
+        response = await loanAPI.rejectLoan(selectedLoan._id, {
+          rejectionReason: actionForm.remarks.trim(),
         });
-        showSuccess(`Loan application #${selectedLoan._id.substring(0, 8)} REJECTED`);
+        showSuccess(response.data?.message || 'Loan application REJECTED');
       } else if (activeActionModal === 'disburse') {
-        if (!actionForm.disbursedAmount || Number(actionForm.disbursedAmount) <= 0) {
-          showError('Disbursed amount must be a positive number.');
-          setActionLoading(false);
-          return;
-        }
-        await loanAPI.disburseLoan(selectedLoan._id, {
+        response = await loanAPI.disburseLoan(selectedLoan._id, {
           disbursedAmount: Number(actionForm.disbursedAmount),
         });
-        showSuccess(`Loan #${selectedLoan._id.substring(0, 8)} DISBURSED & Repayment Schedule Generated!`);
+        showSuccess(response.data?.message || 'Loan funds DISBURSED & repayment schedule generated');
       }
 
       handleCloseActionModal();
-      fetchLoans();
+      await fetchLoans();
     } catch (err) {
-      showError(err.response?.data?.message || 'Failed to update loan status');
+      showError(err.response?.data?.message || 'Failed to process application action');
+    } finally {
       setActionLoading(false);
     }
   };
@@ -185,17 +186,16 @@ const Loans = () => {
   // Table Columns Setup
   const columns = [
     {
-      header: 'Application ID',
+      header: t('loans.columns.loanId'),
       key: '_id',
       render: (item) => (
         <div className="loan-id-cell">
-          <span className="loan-id-code">#{item._id.substring(0, 10)}...</span>
-          <span className="loan-frequency-tag">{item.repaymentFrequency || 'MONTHLY'}</span>
+          <CopyableId id={item._id} />
         </div>
       ),
     },
     {
-      header: 'Farmer Member',
+      header: t('loans.columns.borrower'),
       key: 'farmer',
       render: (item) => (
         <div className="farmer-cell">
@@ -210,28 +210,28 @@ const Loans = () => {
       ),
     },
     {
-      header: 'FPO Organization',
+      header: t('loans.columns.fpo'),
       key: 'fpoName',
       render: (item) => (
         <div className="fpo-cell">
           <Building2 size={13} className="cell-icon" />
-          <span>{item.farmer?.fpoName || 'Green Valley FPO'}</span>
+          <span>{item.farmer?.fpoName || t('profile.defaultFpo')}</span>
         </div>
       ),
     },
     {
-      header: 'Requested Amount',
+      header: t('loans.columns.amount'),
       key: 'loanAmount',
       sortable: true,
       render: (item) => (
         <div className="amount-cell">
           <span className="amount-value">₹{item.loanAmount?.toLocaleString('en-IN')}</span>
-          <span className="amount-tenure">{item.tenureMonths} Months ({item.interestRate || 0}% p.a.)</span>
+          <span className="amount-tenure">{t('loanDetail.tenureMonths', { months: item.tenureMonths })} ({item.interestRate || 0}% p.a.)</span>
         </div>
       ),
     },
     {
-      header: 'Purpose',
+      header: t('loans.columns.purpose'),
       key: 'purpose',
       render: (item) => (
         <span className="purpose-text" title={item.purpose}>
@@ -240,7 +240,7 @@ const Loans = () => {
       ),
     },
     {
-      header: 'Application Date',
+      header: t('loans.columns.appliedDate'),
       key: 'createdAt',
       sortable: true,
       render: (item) => (
@@ -254,13 +254,13 @@ const Loans = () => {
       ),
     },
     {
-      header: 'Status',
+      header: t('loans.columns.status'),
       key: 'status',
       align: 'center',
       render: (item) => <StatusBadge status={item.status} />,
     },
     {
-      header: 'Actions',
+      header: t('loans.columns.actions'),
       key: 'actions',
       align: 'right',
       render: (item) => {
@@ -271,10 +271,10 @@ const Loans = () => {
             <button
               onClick={() => navigate(`/admin/loans/${item._id}`)}
               className="btn btn-secondary action-btn view-btn"
-              title="View Complete Loan Details"
+              title={t('loans.actionViewDetails')}
             >
               <Eye size={14} />
-              <span>View</span>
+              <span>{t('common.view')}</span>
             </button>
 
             {/* Contextual Actions strictly based on Backend State Machine */}
@@ -282,10 +282,10 @@ const Loans = () => {
               <button
                 onClick={() => handleOpenActionModal(item, 'under-review')}
                 className="btn action-btn review-btn"
-                title="Mark Under Review"
+                title={t('loans.actionReview')}
               >
                 <SearchCheck size={14} />
-                <span>Review</span>
+                <span>{t('loans.actionReview')}</span>
               </button>
             )}
 
@@ -294,18 +294,18 @@ const Loans = () => {
                 <button
                   onClick={() => handleOpenActionModal(item, 'approve')}
                   className="btn action-btn approve-btn"
-                  title="Approve Loan Application"
+                  title={t('loans.actionApprove')}
                 >
                   <CheckCircle2 size={14} />
-                  <span>Approve</span>
+                  <span>{t('loans.actionApprove')}</span>
                 </button>
                 <button
                   onClick={() => handleOpenActionModal(item, 'reject')}
                   className="btn action-btn reject-btn"
-                  title="Reject Loan Application"
+                  title={t('loans.actionReject')}
                 >
                   <XCircle size={14} />
-                  <span>Reject</span>
+                  <span>{t('loans.actionReject')}</span>
                 </button>
               </>
             )}
@@ -314,10 +314,10 @@ const Loans = () => {
               <button
                 onClick={() => handleOpenActionModal(item, 'disburse')}
                 className="btn action-btn disburse-btn"
-                title="Disburse Funds & Generate EMI Schedule"
+                title={t('loans.actionDisburse')}
               >
                 <Banknote size={14} />
-                <span>Disburse</span>
+                <span>{t('loans.actionDisburse')}</span>
               </button>
             )}
 
@@ -325,10 +325,10 @@ const Loans = () => {
               <button
                 onClick={() => navigate(`/admin/repayments?loan=${item._id}`)}
                 className="btn action-btn repayment-btn"
-                title="View Repayment Installments"
+                title={t('nav.repayments')}
               >
                 <CreditCard size={14} />
-                <span>Repayments</span>
+                <span>{t('nav.repayments')}</span>
               </button>
             )}
           </div>
@@ -340,12 +340,12 @@ const Loans = () => {
   return (
     <div className="loans-page-container">
       <PageHeader
-        title="Loan Applications Management"
-        subtitle="Review agricultural credit requests, conduct evaluation reviews, approve applications, and disburse capital"
+        title={t('loans.title')}
+        subtitle={t('loans.subtitle')}
         actions={
           <button onClick={fetchLoans} className="btn btn-secondary refresh-btn" disabled={loading}>
             <RefreshCw size={16} className={loading ? 'spinning' : ''} />
-            <span>Refresh Applications</span>
+            <span>{t('common.refresh')}</span>
           </button>
         }
       />
@@ -356,7 +356,7 @@ const Loans = () => {
           <Search size={16} className="search-icon" />
           <input
             type="text"
-            placeholder="Search by Loan ID, Farmer Name, or Purpose..."
+            placeholder={t('loans.searchPlaceholder')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="filter-search-input"
@@ -366,7 +366,7 @@ const Loans = () => {
         <div className="filters-group">
           <div className="filter-item">
             <label htmlFor="loan-status-select" className="filter-label">
-              Status:
+              {t('loans.filterStatusLabel')}
             </label>
             <select
               id="loan-status-select"
@@ -377,19 +377,19 @@ const Loans = () => {
               }}
               className="filter-select"
             >
-              <option value="ALL">All Application Statuses</option>
-              <option value="SUBMITTED">Submitted</option>
-              <option value="UNDER_REVIEW">Under Review</option>
-              <option value="APPROVED">Approved</option>
-              <option value="REJECTED">Rejected</option>
-              <option value="DISBURSED">Disbursed</option>
-              <option value="CLOSED">Closed</option>
+              <option value="ALL">{t('loans.allStatuses')}</option>
+              <option value="SUBMITTED">{t('status.SUBMITTED')}</option>
+              <option value="UNDER_REVIEW">{t('status.UNDER_REVIEW')}</option>
+              <option value="APPROVED">{t('status.APPROVED')}</option>
+              <option value="REJECTED">{t('status.REJECTED')}</option>
+              <option value="DISBURSED">{t('status.DISBURSED')}</option>
+              <option value="CLOSED">{t('status.CLOSED')}</option>
             </select>
           </div>
 
           <div className="filter-item">
             <label htmlFor="amount-select" className="filter-label">
-              Amount:
+              {t('loans.columns.amount')}:
             </label>
             <select
               id="amount-select"
@@ -397,7 +397,7 @@ const Loans = () => {
               onChange={(e) => setAmountFilter(e.target.value)}
               className="filter-select"
             >
-              <option value="ALL">All Amounts</option>
+              <option value="ALL">{t('common.all')}</option>
               <option value="LOW">&lt; ₹50,000</option>
               <option value="MID">₹50,000 - ₹1,00,000</option>
               <option value="HIGH">&gt; ₹1,00,000</option>
@@ -409,18 +409,18 @@ const Loans = () => {
       {/* Table & Content Section */}
       {loading ? (
         <div className="loans-loading-container glass-panel">
-          <LoadingSpinner message="Fetching loan applications from backend database..." />
+          <LoadingSpinner message={t('common.loading')} />
         </div>
       ) : error ? (
-        <ErrorState title="Failed to Load Loan Applications" message={error} onRetry={fetchLoans} />
+        <ErrorState title={t('errorState.defaultTitle')} message={error} onRetry={fetchLoans} />
       ) : filteredLoans.length === 0 ? (
         <EmptyState
           icon={FileText}
-          title="No Loan Applications Found"
+          title={t('emptyState.defaultTitle')}
           description={
             searchTerm || statusFilter !== 'ALL' || amountFilter !== 'ALL'
-              ? 'No loan applications matched your search or filter options.'
-              : 'There are currently no loan applications submitted in the system.'
+              ? t('emptyState.defaultDesc')
+              : t('emptyState.defaultTitle')
           }
           action={
             (searchTerm || statusFilter !== 'ALL' || amountFilter !== 'ALL') && (
@@ -432,7 +432,7 @@ const Loans = () => {
                 }}
                 className="btn btn-secondary"
               >
-                Clear Filters
+                {t('common.clearFilters')}
               </button>
             )
           }
@@ -460,9 +460,9 @@ const Loans = () => {
       <ConfirmDialog
         isOpen={activeActionModal === 'under-review'}
         type="info"
-        title="Move Application to UNDER REVIEW?"
+        title={t('loanDetail.markUnderReview')}
         message={`Transition loan application #${selectedLoan?._id?.substring(0, 8)} into UNDER REVIEW status for administrative evaluation?`}
-        confirmText="Confirm Under Review"
+        confirmText={t('loans.actionReview')}
         onConfirm={handleExecuteAction}
         onCancel={handleCloseActionModal}
         loading={actionLoading}
@@ -475,7 +475,7 @@ const Loans = () => {
             <div className="modal-header">
               <div className="title-group">
                 <CheckCircle2 size={24} className="text-emerald" />
-                <h3>Approve Loan Application</h3>
+                <h3>{t('loans.modals.approveTitle')}</h3>
               </div>
               <button className="modal-close-btn" onClick={handleCloseActionModal}>
                 &times;
@@ -483,14 +483,13 @@ const Loans = () => {
             </div>
             <div className="modal-body">
               <p className="modal-intro">
-                Approve loan request for <strong>{selectedLoan?.farmer?.name}</strong> (Requested Amount: ₹
-                {selectedLoan?.loanAmount?.toLocaleString('en-IN')})
+                {t('loans.modals.approveSubtitle')} (<strong>{selectedLoan?.farmer?.name}</strong>)
               </p>
 
               <div className="form-grid">
                 <div className="form-group">
                   <label htmlFor="approve-interest" className="form-label">
-                    Interest Rate (% p.a.)
+                    {t('loans.modals.interestRateLabel')}
                   </label>
                   <input
                     id="approve-interest"
@@ -506,7 +505,7 @@ const Loans = () => {
 
                 <div className="form-group">
                   <label htmlFor="approve-tenure" className="form-label">
-                    Tenure Duration (Months)
+                    {t('loans.columns.tenure')}
                   </label>
                   <input
                     id="approve-tenure"
@@ -520,7 +519,7 @@ const Loans = () => {
 
                 <div className="form-group col-span-2">
                   <label htmlFor="approve-remarks" className="form-label">
-                    Approval Remarks
+                    {t('loans.modals.remarksLabel')}
                   </label>
                   <textarea
                     id="approve-remarks"
@@ -535,10 +534,10 @@ const Loans = () => {
             </div>
             <div className="modal-footer">
               <button className="btn btn-secondary" onClick={handleCloseActionModal} disabled={actionLoading}>
-                Cancel
+                {t('common.cancel')}
               </button>
               <button className="btn approve-btn" onClick={handleExecuteAction} disabled={actionLoading}>
-                {actionLoading ? 'Approving...' : 'Confirm Loan Approval'}
+                {actionLoading ? t('common.loading') : t('loans.modals.confirmApproveBtn')}
               </button>
             </div>
           </div>
@@ -552,7 +551,7 @@ const Loans = () => {
             <div className="modal-header">
               <div className="title-group">
                 <XCircle size={24} className="text-rose" />
-                <h3>Reject Loan Application</h3>
+                <h3>{t('loans.modals.rejectTitle')}</h3>
               </div>
               <button className="modal-close-btn" onClick={handleCloseActionModal}>
                 &times;
@@ -560,18 +559,18 @@ const Loans = () => {
             </div>
             <div className="modal-body">
               <p className="modal-intro">
-                Reject loan request for <strong>{selectedLoan?.farmer?.name}</strong>. Rejection remarks are mandatory.
+                {t('loans.modals.rejectSubtitle')} (<strong>{selectedLoan?.farmer?.name}</strong>)
               </p>
 
               <div className="form-group col-span-2">
                 <label htmlFor="reject-remarks" className="form-label">
-                  Rejection Remarks <span className="required-star">*</span>
+                  {t('loans.modals.rejectionRemarksLabel')} <span className="required-star">*</span>
                 </label>
                 <textarea
                   id="reject-remarks"
                   className="form-textarea"
                   rows="4"
-                  placeholder="State the explicit reasons for application rejection (e.g. Invalid land 7/12 record)..."
+                  placeholder={t('loans.modals.rejectionRemarksPlaceholder')}
                   value={actionForm.remarks}
                   onChange={(e) => setActionForm({ ...actionForm, remarks: e.target.value })}
                   required
@@ -580,10 +579,10 @@ const Loans = () => {
             </div>
             <div className="modal-footer">
               <button className="btn btn-secondary" onClick={handleCloseActionModal} disabled={actionLoading}>
-                Cancel
+                {t('common.cancel')}
               </button>
               <button className="btn reject-btn" onClick={handleExecuteAction} disabled={actionLoading}>
-                {actionLoading ? 'Rejecting...' : 'Confirm Rejection'}
+                {actionLoading ? t('common.loading') : t('loans.modals.confirmRejectBtn')}
               </button>
             </div>
           </div>
@@ -597,7 +596,7 @@ const Loans = () => {
             <div className="modal-header">
               <div className="title-group">
                 <Banknote size={24} className="text-indigo" />
-                <h3>Disburse Loan Funds</h3>
+                <h3>{t('loans.modals.disburseTitle')}</h3>
               </div>
               <button className="modal-close-btn" onClick={handleCloseActionModal}>
                 &times;
@@ -605,12 +604,12 @@ const Loans = () => {
             </div>
             <div className="modal-body">
               <p className="modal-intro">
-                Disburse credit funds to <strong>{selectedLoan?.farmer?.name}</strong>. Disbursing automatically generates the monthly repayment installment schedule.
+                {t('loans.modals.disburseSubtitle')} (<strong>{selectedLoan?.farmer?.name}</strong>)
               </p>
 
               <div className="form-group">
                 <label htmlFor="disburse-amount" className="form-label">
-                  Disbursed Amount (₹)
+                  {t('loans.modals.disbursedAmountLabel')}
                 </label>
                 <input
                   id="disburse-amount"
@@ -620,15 +619,15 @@ const Loans = () => {
                   value={actionForm.disbursedAmount}
                   onChange={(e) => setActionForm({ ...actionForm, disbursedAmount: e.target.value })}
                 />
-                <span className="input-hint">Approved Loan Amount: ₹{selectedLoan?.loanAmount?.toLocaleString('en-IN')}</span>
+                <span className="input-hint">{t('loanDetail.approvedAmount')}: ₹{selectedLoan?.loanAmount?.toLocaleString('en-IN')}</span>
               </div>
             </div>
             <div className="modal-footer">
               <button className="btn btn-secondary" onClick={handleCloseActionModal} disabled={actionLoading}>
-                Cancel
+                {t('common.cancel')}
               </button>
               <button className="btn disburse-btn" onClick={handleExecuteAction} disabled={actionLoading}>
-                {actionLoading ? 'Disbursing...' : 'Disburse & Generate Repayments'}
+                {actionLoading ? t('common.loading') : t('loans.modals.confirmDisburseBtn')}
               </button>
             </div>
           </div>

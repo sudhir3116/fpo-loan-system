@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AlertCircle, CheckCircle, HelpCircle, X } from 'lucide-react';
 import './ConfirmDialog.css';
 
@@ -6,13 +7,15 @@ const ConfirmDialog = ({
   isOpen,
   title,
   message,
-  confirmText = 'Confirm',
-  cancelText = 'Cancel',
+  confirmText,
+  cancelText,
   type = 'info', // 'info' | 'danger' | 'warning' | 'success'
   onConfirm,
   onCancel,
   loading = false,
 }) => {
+  const { t } = useTranslation();
+
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape' && isOpen && !loading) {
@@ -38,6 +41,10 @@ const ConfirmDialog = ({
     success: <CheckCircle size={28} className="dialog-icon icon-success" />,
   };
 
+  const displayConfirm = confirmText || t('common.confirm');
+  const displayCancel = cancelText || t('common.cancel');
+  const displayTitle = title || t('confirmDialog.defaultTitle');
+
   return (
     <div className="confirm-dialog-overlay" onClick={!loading ? onCancel : undefined}>
       <div
@@ -50,14 +57,14 @@ const ConfirmDialog = ({
           className="dialog-close-btn"
           onClick={onCancel}
           disabled={loading}
-          aria-label="Close modal"
+          aria-label={t('common.close')}
         >
           <X size={18} />
         </button>
 
         <div className="dialog-header">
           <div className="dialog-icon-container">{iconMap[type] || iconMap.info}</div>
-          <h3 className="dialog-title">{title}</h3>
+          <h3 className="dialog-title">{displayTitle}</h3>
         </div>
 
         <div className="dialog-body">
@@ -71,7 +78,7 @@ const ConfirmDialog = ({
             onClick={onCancel}
             disabled={loading}
           >
-            {cancelText}
+            {displayCancel}
           </button>
           <button
             type="button"
@@ -79,7 +86,7 @@ const ConfirmDialog = ({
             onClick={onConfirm}
             disabled={loading}
           >
-            {loading ? 'Processing...' : confirmText}
+            {loading ? t('common.loading') : displayConfirm}
           </button>
         </div>
       </div>

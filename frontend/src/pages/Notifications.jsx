@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Bell,
   AlertTriangle,
@@ -30,6 +31,7 @@ import {
 import './Notifications.css';
 
 const Notifications = () => {
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { showSuccess, showError } = useToast();
 
@@ -103,13 +105,18 @@ const Notifications = () => {
     // 1. Loans: SUBMITTED (New Applications)
     loans.forEach((loan) => {
       const st = (loan.status || '').toUpperCase();
-      const farmerName = loan.farmer?.name || 'Farmer';
+      const farmerName = loan.farmer?.name || (i18n.language === 'ta' ? 'விவசாயி' : 'Farmer');
+      const loanAmountFormatted = loan.loanAmount ? loan.loanAmount.toLocaleString('en-IN') : '0';
 
       if (st === 'SUBMITTED') {
         list.push({
           id: `notif-loan-sub-${loan._id}`,
-          title: 'New Loan Application Submitted',
-          description: `${farmerName} submitted a new loan application for ₹${loan.loanAmount?.toLocaleString('en-IN')} (${loan.purpose || 'Agricultural Loan'}).`,
+          title: t('notifications.items.newLoanSubmittedTitle'),
+          description: t('notifications.items.newLoanSubmittedDesc', {
+            farmer: farmerName,
+            amount: loanAmountFormatted,
+            purpose: loan.purpose || 'Agricultural Loan',
+          }),
           category: 'LOANS',
           priority: 'HIGH',
           actionRequired: true,
@@ -122,8 +129,11 @@ const Notifications = () => {
       } else if (st === 'UNDER_REVIEW') {
         list.push({
           id: `notif-loan-rev-${loan._id}`,
-          title: 'Application Awaiting Credit Decision',
-          description: `Loan #${loan._id.substring(0, 8)}... for ${farmerName} is under review and requires approval/rejection.`,
+          title: t('notifications.items.appUnderReviewTitle'),
+          description: t('notifications.items.appUnderReviewDesc', {
+            id: loan._id ? `${loan._id.substring(0, 8)}...` : '',
+            farmer: farmerName,
+          }),
           category: 'LOANS',
           priority: 'MEDIUM',
           actionRequired: true,
@@ -136,8 +146,11 @@ const Notifications = () => {
       } else if (st === 'APPROVED') {
         list.push({
           id: `notif-loan-app-${loan._id}`,
-          title: 'Approved Loan Awaiting Disbursement',
-          description: `Loan #${loan._id.substring(0, 8)}... for ₹${loan.loanAmount?.toLocaleString('en-IN')} has been approved and is ready for disbursement.`,
+          title: t('notifications.items.approvedAwaitingDisbursementTitle'),
+          description: t('notifications.items.approvedAwaitingDisbursementDesc', {
+            id: loan._id ? `${loan._id.substring(0, 8)}...` : '',
+            amount: loanAmountFormatted,
+          }),
           category: 'LOANS',
           priority: 'HIGH',
           actionRequired: true,
@@ -154,12 +167,20 @@ const Notifications = () => {
     repayments.forEach((repay) => {
       const st = (repay.paymentStatus || '').toUpperCase();
       if (st === 'OVERDUE') {
-        const borrowerName = repay.borrower?.name || 'Borrower';
+        const borrowerName = repay.borrower?.name || (i18n.language === 'ta' ? 'கடன்தாரர்' : 'Borrower');
         const loanIdStr = typeof repay.loan === 'object' ? repay.loan._id : repay.loan;
+        const amountDueFormatted = repay.amountDue ? repay.amountDue.toLocaleString('en-IN') : '0';
+        const dueDateFormatted = repay.dueDate ? new Date(repay.dueDate).toLocaleDateString('en-IN') : '';
+
         list.push({
           id: `notif-repay-over-${repay._id}`,
-          title: 'Overdue Installment Payment Alert',
-          description: `Installment #${repay.installmentNumber} of ₹${repay.amountDue?.toLocaleString('en-IN')} for ${borrowerName} is overdue (Due: ${new Date(repay.dueDate).toLocaleDateString('en-IN')}).`,
+          title: t('notifications.items.overdueInstallmentTitle'),
+          description: t('notifications.items.overdueInstallmentDesc', {
+            inst: repay.installmentNumber,
+            amount: amountDueFormatted,
+            borrower: borrowerName,
+            date: dueDateFormatted,
+          }),
           category: 'REPAYMENTS',
           priority: 'HIGH',
           actionRequired: true,
@@ -179,8 +200,12 @@ const Notifications = () => {
         const loanIdStr = typeof doc.loan === 'object' ? doc.loan._id : doc.loan;
         list.push({
           id: `notif-doc-rej-${doc._id}`,
-          title: 'Document Verification Rejected',
-          description: `Document "${doc.documentType || 'Uploaded Document'}" for loan #${(loanIdStr || '').substring(0, 8)} was rejected. Remarks: "${doc.rejectionReason || 'Invalid document'}"`,
+          title: t('notifications.items.docRejectedTitle'),
+          description: t('notifications.items.docRejectedDesc', {
+            docType: doc.documentType || 'Uploaded Document',
+            id: loanIdStr ? `${loanIdStr.substring(0, 8)}...` : '',
+            reason: doc.rejectionReason || 'Invalid document',
+          }),
           category: 'DOCUMENTS',
           priority: 'MEDIUM',
           actionRequired: true,
@@ -196,7 +221,7 @@ const Notifications = () => {
     // Sort chronologically (newest first)
     list.sort((a, b) => new Date(b.date) - new Date(a.date));
     return list;
-  }, [loans, repayments, documents]);
+  }, [loans, repayments, documents, t, i18n.language]);
 
   // Filtered Notifications based on category and read status
   const filteredNotifications = useMemo(() => {
@@ -230,12 +255,12 @@ const Notifications = () => {
   const handleMarkAllRead = () => {
     const allIds = allNotifications.map((n) => n.id);
     setReadIds(allIds);
-    showSuccess('All notifications marked as read');
+    showSuccess(t('notifications.markAllRead'));
   };
 
   const handleClearRead = () => {
     setReadIds((prev) => prev.filter((id) => !allNotifications.some((n) => n.id === id)));
-    showSuccess('Notification read states reset');
+    showSuccess(t('notifications.resetAlerts'));
   };
 
   const handleNotificationClick = (notif) => {
@@ -246,7 +271,7 @@ const Notifications = () => {
   };
 
   const formatRelativeTime = (isoString) => {
-    if (!isoString) return 'Recently';
+    if (!isoString) return i18n.language === 'ta' ? 'சமீபத்தில்' : 'Recently';
     const date = new Date(isoString);
     const now = new Date();
     const diffMs = now - date;
@@ -254,30 +279,30 @@ const Notifications = () => {
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-    if (diffMins < 5) return 'Just now';
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    if (diffDays === 1) return 'Yesterday';
-    if (diffDays < 7) return `${diffDays}d ago`;
-    return date.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' });
+    if (diffMins < 5) return i18n.language === 'ta' ? 'இப்போதுதான்' : 'Just now';
+    if (diffMins < 60) return i18n.language === 'ta' ? `${diffMins} நிமிடம் முன்` : `${diffMins}m ago`;
+    if (diffHours < 24) return i18n.language === 'ta' ? `${diffHours} மணிநேரம் முன்` : `${diffHours}h ago`;
+    if (diffDays === 1) return i18n.language === 'ta' ? 'நேற்று' : 'Yesterday';
+    if (diffDays < 7) return i18n.language === 'ta' ? `${diffDays} நாட்கள் முன்` : `${diffDays}d ago`;
+    return date.toLocaleDateString(i18n.language === 'ta' ? 'ta-IN' : 'en-IN', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
   return (
     <div className="notifications-page-container">
       <PageHeader
-        title="Admin System Alerts & Notifications"
-        subtitle="Operational event triggers, pending review reminders, and overdue repayment alerts compiled from backend state"
+        title={t('notifications.title')}
+        subtitle={t('notifications.subtitle')}
         actions={
           <div className="notif-header-actions">
             {unreadCount > 0 && (
               <button onClick={handleMarkAllRead} className="btn btn-secondary">
                 <CheckCheck size={15} />
-                <span>Mark All Read ({unreadCount})</span>
+                <span>{t('notifications.markAllRead')} ({unreadCount})</span>
               </button>
             )}
             <button onClick={handleClearRead} className="btn btn-secondary">
               <RefreshCw size={15} />
-              <span>Reset State</span>
+              <span>{t('notifications.resetAlerts')}</span>
             </button>
             <button onClick={fetchNotificationData} className="btn btn-secondary" disabled={loading}>
               <RefreshCw size={15} className={loading ? 'spinning' : ''} />
@@ -292,10 +317,9 @@ const Notifications = () => {
           <Info size={20} className="text-amber" />
         </div>
         <div className="notice-content">
-          <div className="notice-title">Backend Push Notification API Disclosure</div>
+          <div className="notice-title">{t('header.notificationsTitle')}</div>
           <div className="notice-description">
-            Notice: No dedicated <code>/api/notifications</code> push endpoint exists in the current backend server schema.
-            The operational action alerts rendered below are <strong>dynamically compiled from active backend domain records</strong> (Loans, Repayments, Documents) to ensure 100% accurate, non-fake administrative oversight.
+            {t('notifications.backendNotice')}
           </div>
         </div>
       </div>
@@ -306,58 +330,54 @@ const Notifications = () => {
           className={`notif-filter-chip ${categoryFilter === 'ALL' ? 'active' : ''}`}
           onClick={() => setCategoryFilter('ALL')}
         >
-          <span>All Alerts</span>
+          <span>{t('notifications.filters.all')}</span>
           <span className="count-pill">{allNotifications.length}</span>
         </button>
         <button
           className={`notif-filter-chip ${categoryFilter === 'UNREAD' ? 'active' : ''}`}
           onClick={() => setCategoryFilter('UNREAD')}
         >
-          <span>Unread</span>
+          <span>{t('notifications.filters.unread')}</span>
           {unreadCount > 0 && <span className="count-pill unread">{unreadCount}</span>}
         </button>
         <button
           className={`notif-filter-chip ${categoryFilter === 'ACTION_REQUIRED' ? 'active' : ''}`}
           onClick={() => setCategoryFilter('ACTION_REQUIRED')}
         >
-          <span>Action Required</span>
+          <span>{t('notifications.filters.actionRequired')}</span>
         </button>
         <button
           className={`notif-filter-chip ${categoryFilter === 'LOANS' ? 'active' : ''}`}
           onClick={() => setCategoryFilter('LOANS')}
         >
-          <span>Loans</span>
+          <span>{t('notifications.filters.loans')}</span>
         </button>
         <button
           className={`notif-filter-chip ${categoryFilter === 'REPAYMENTS' ? 'active' : ''}`}
           onClick={() => setCategoryFilter('REPAYMENTS')}
         >
-          <span>Repayments</span>
+          <span>{t('notifications.filters.repayments')}</span>
         </button>
         <button
           className={`notif-filter-chip ${categoryFilter === 'DOCUMENTS' ? 'active' : ''}`}
           onClick={() => setCategoryFilter('DOCUMENTS')}
         >
-          <span>Documents</span>
+          <span>{t('notifications.filters.documents')}</span>
         </button>
       </div>
 
       {/* Main Content Area */}
       {loading ? (
         <div className="notif-loading-card glass-panel">
-          <LoadingSpinner message="Scanning backend loan, repayment, and document registers for actionable alerts..." />
+          <LoadingSpinner message={t('common.loading')} />
         </div>
       ) : error ? (
-        <ErrorState title="Failed to Fetch Notifications" message={error} onRetry={fetchNotificationData} />
+        <ErrorState title={t('errorState.defaultTitle')} message={error} onRetry={fetchNotificationData} />
       ) : filteredNotifications.length === 0 ? (
         <div className="notif-empty-card glass-panel">
           <EmptyState
-            title={categoryFilter === 'UNREAD' ? 'No Unread Notifications' : 'All Clear! No Active Alerts'}
-            description={
-              categoryFilter === 'UNREAD'
-                ? 'You have caught up with all administrative notifications and system alerts.'
-                : 'There are currently no pending review tasks or overdue repayment warnings matching your selected filter.'
-            }
+            title={t('notifications.noNotificationsTitle')}
+            description={t('notifications.noNotificationsDesc')}
           />
         </div>
       ) : (
@@ -381,7 +401,7 @@ const Notifications = () => {
                     <h4 className="notif-title">{notif.title}</h4>
                     <div className="notif-meta-tags">
                       <span className={`category-tag ${notif.category.toLowerCase()}`}>{notif.category}</span>
-                      {notif.priority === 'HIGH' && <span className="priority-tag high">High Priority</span>}
+                      {notif.priority === 'HIGH' && <span className="priority-tag high">{t('common.required')}</span>}
                       <span className="notif-time">{formatRelativeTime(notif.date)}</span>
                     </div>
                   </div>
@@ -397,7 +417,7 @@ const Notifications = () => {
                         navigate(notif.targetUrl);
                       }}
                     >
-                      <span>Take Action</span>
+                      <span>{t('notifications.navigateToTarget')}</span>
                       <ExternalLink size={13} />
                     </button>
 
@@ -407,7 +427,7 @@ const Notifications = () => {
                       onClick={(e) => handleToggleRead(notif.id, e)}
                     >
                       {isRead ? <CircleDot size={15} /> : <CheckCircle2 size={15} />}
-                      <span>{isRead ? 'Mark Unread' : 'Mark Read'}</span>
+                      <span>{isRead ? t('header.unreadBadge', { count: '' }) : t('notifications.markAllRead')}</span>
                     </button>
                   </div>
                 </div>
@@ -435,32 +455,32 @@ const Notifications = () => {
 
             <div className="modal-body">
               <div className="notif-detail-row">
-                <span className="detail-label">Category:</span>
+                <span className="detail-label">{t('common.details')}:</span>
                 <span className={`category-tag ${selectedNotification.category.toLowerCase()}`}>
                   {selectedNotification.category}
                 </span>
               </div>
 
               <div className="notif-detail-row">
-                <span className="detail-label">Timestamp:</span>
+                <span className="detail-label">{t('common.date')}:</span>
                 <span>{new Date(selectedNotification.date).toLocaleString('en-IN')}</span>
               </div>
 
               <div className="notif-detail-row">
-                <span className="detail-label">Priority Level:</span>
+                <span className="detail-label">{t('common.status')}:</span>
                 <span className={`priority-tag ${selectedNotification.priority.toLowerCase()}`}>
                   {selectedNotification.priority}
                 </span>
               </div>
 
               <div className="notif-detail-box">
-                <span className="detail-label">Notification Summary:</span>
+                <span className="detail-label">{t('notifications.drawerTitle')}:</span>
                 <p>{selectedNotification.description}</p>
               </div>
 
               {selectedNotification.meta && (
                 <div className="notif-meta-table">
-                  <div className="meta-table-title">Target Payload Metadata</div>
+                  <div className="meta-table-title">{t('common.details')}</div>
                   {Object.entries(selectedNotification.meta).map(([k, v]) => (
                     <div key={k} className="meta-table-row">
                       <span className="meta-key">{k}:</span>
@@ -473,7 +493,7 @@ const Notifications = () => {
 
             <div className="modal-footer">
               <button className="btn btn-secondary" onClick={() => setSelectedNotification(null)}>
-                Close
+                {t('common.close')}
               </button>
               <button
                 className="btn btn-primary"
@@ -483,7 +503,7 @@ const Notifications = () => {
                   navigate(target);
                 }}
               >
-                <span>Navigate to Target Record</span>
+                <span>{t('notifications.navigateToTarget')}</span>
                 <ChevronRight size={15} />
               </button>
             </div>

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import LoadingSpinner from './LoadingSpinner';
 import EmptyState from './EmptyState';
@@ -9,16 +10,20 @@ const DataTable = ({
   columns = [],
   data = [],
   loading = false,
-  emptyTitle = 'No data available',
-  emptyDescription = 'There are no records to display.',
+  emptyTitle,
+  emptyDescription,
   emptyIcon,
   onRowClick,
   pagination,
   keyExtractor = (item, index) => item._id || item.id || index,
   className = '',
 }) => {
+  const { t } = useTranslation();
   const [sortColumn, setSortColumn] = useState(null);
   const [sortDirection, setSortDirection] = useState('asc'); // 'asc' | 'desc'
+
+  const resolvedEmptyTitle = emptyTitle || t('emptyState.defaultTitle');
+  const resolvedEmptyDescription = emptyDescription || t('emptyState.defaultDesc');
 
   const handleSort = (colKey) => {
     if (sortColumn === colKey) {
@@ -88,7 +93,7 @@ const DataTable = ({
             {loading ? (
               <tr>
                 <td colSpan={columns.length} className="table-loading-cell">
-                  <LoadingSpinner message="Fetching data..." />
+                  <LoadingSpinner message={t('common.loading')} />
                 </td>
               </tr>
             ) : sortedData.length === 0 ? (
@@ -96,8 +101,8 @@ const DataTable = ({
                 <td colSpan={columns.length} className="table-empty-cell">
                   <EmptyState
                     icon={emptyIcon}
-                    title={emptyTitle}
-                    description={emptyDescription}
+                    title={resolvedEmptyTitle}
+                    description={resolvedEmptyDescription}
                   />
                 </td>
               </tr>

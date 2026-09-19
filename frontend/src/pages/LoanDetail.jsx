@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   FileText,
   User,
@@ -25,10 +26,12 @@ import {
   ConfirmDialog,
   DocumentReview,
   useToast,
+  CopyableId,
 } from '../components';
 import './LoanDetail.css';
 
 const LoanDetail = () => {
+  const { t, i18n } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
   const { showSuccess, showError } = useToast();
@@ -172,7 +175,7 @@ const LoanDetail = () => {
   if (loading) {
     return (
       <div className="loan-detail-loading glass-panel">
-        <LoadingSpinner message="Fetching loan application file & verification documents..." />
+        <LoadingSpinner message={t('common.loading')} />
       </div>
     );
   }
@@ -180,9 +183,9 @@ const LoanDetail = () => {
   if (error || !loan) {
     return (
       <div className="loan-detail-error-container">
-        <ErrorState title="Loan Application Unavailable" message={error} onRetry={fetchLoanData} />
+        <ErrorState title={t('errorState.defaultTitle')} message={error} onRetry={fetchLoanData} />
         <button onClick={() => navigate('/admin/loans')} className="btn btn-secondary mt-4">
-          <ArrowLeft size={16} /> Return to Loans Queue
+          <ArrowLeft size={16} /> <span>{t('loanDetail.backToLoans')}</span>
         </button>
       </div>
     );
@@ -194,20 +197,20 @@ const LoanDetail = () => {
   return (
     <div className="loan-detail-container">
       <PageHeader
-        title={`Loan Application #${loan._id.substring(0, 10)}`}
-        subtitle={`Submitted by ${farmer.name || 'Farmer'} on ${new Date(loan.createdAt).toLocaleDateString('en-IN')}`}
+        title={t('loanDetail.title')}
+        subtitle={<span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>{t('loans.columns.loanId')}: <CopyableId id={loan._id} /></span>}
         breadcrumbsItems={[
-          { label: 'Admin Portal', path: '/admin' },
-          { label: 'Loan Applications', path: '/admin/loans' },
-          { label: `Loan #${loan._id.substring(0, 8)}`, path: `/admin/loans/${loan._id}`, isLast: true },
+          { label: t('nav.home'), path: '/admin' },
+          { label: t('nav.loanApplications'), path: '/admin/loans' },
+          { label: `Loan #${loan._id ? loan._id.substring(0, 8) : ''}`, path: `/admin/loans/${loan._id}`, isLast: true },
         ]}
         actions={
           <div className="detail-header-actions">
             <button onClick={() => navigate('/admin/loans')} className="btn btn-secondary">
               <ArrowLeft size={16} />
-              <span>Back to Queue</span>
+              <span>{t('loanDetail.backToLoans')}</span>
             </button>
-            <button onClick={fetchLoanData} className="btn btn-secondary" title="Refresh Application Data">
+            <button onClick={fetchLoanData} className="btn btn-secondary" title={t('common.refresh')}>
               <RefreshCw size={16} />
             </button>
           </div>
@@ -217,7 +220,7 @@ const LoanDetail = () => {
       {/* Top Banner Status & Workflow Action Bar */}
       <div className="status-banner-card glass-panel">
         <div className="banner-left">
-          <span className="banner-label">Lifecycle Status:</span>
+          <span className="banner-label">{t('common.status')}:</span>
           <StatusBadge status={loan.status} size="large" />
         </div>
 
@@ -230,7 +233,7 @@ const LoanDetail = () => {
               disabled={actionLoading}
             >
               <SearchCheck size={16} />
-              <span>Move to Under Review</span>
+              <span>{t('loanDetail.markUnderReview')}</span>
             </button>
           )}
 
@@ -242,7 +245,7 @@ const LoanDetail = () => {
                 disabled={actionLoading}
               >
                 <CheckCircle2 size={16} />
-                <span>Approve Loan</span>
+                <span>{t('loans.actionApprove')}</span>
               </button>
               <button
                 onClick={() => setActiveActionModal('reject')}
@@ -250,7 +253,7 @@ const LoanDetail = () => {
                 disabled={actionLoading}
               >
                 <XCircle size={16} />
-                <span>Reject Loan</span>
+                <span>{t('loans.actionReject')}</span>
               </button>
             </>
           )}
@@ -262,14 +265,14 @@ const LoanDetail = () => {
               disabled={actionLoading}
             >
               <Banknote size={16} />
-              <span>Disburse Funds & Generate EMI</span>
+              <span>{t('loans.actionDisburse')}</span>
             </button>
           )}
 
           {status === 'DISBURSED' && (
             <button onClick={() => navigate(`/admin/repayments?loan=${loan._id}`)} className="btn repayment-btn">
               <CreditCard size={16} />
-              <span>View Repayments Module</span>
+              <span>{t('nav.repayments')}</span>
             </button>
           )}
         </div>
@@ -281,40 +284,40 @@ const LoanDetail = () => {
         <div className="detail-card glass-panel">
           <h3 className="card-section-title">
             <FileText size={18} className="text-emerald" />
-            <span>Financial & Application Specifications</span>
+            <span>{t('loanDetail.loanSummaryCard')}</span>
           </h3>
 
           <div className="specs-grid">
             <div className="spec-item">
-              <span className="spec-label">Requested Amount</span>
+              <span className="spec-label">{t('loanDetail.requestedAmount')}</span>
               <span className="spec-value highlight-currency">
                 ₹{loan.loanAmount?.toLocaleString('en-IN')}
               </span>
             </div>
 
             <div className="spec-item">
-              <span className="spec-label">Loan Purpose</span>
+              <span className="spec-label">{t('loanDetail.purpose')}</span>
               <span className="spec-value">{loan.purpose}</span>
             </div>
 
             <div className="spec-item">
-              <span className="spec-label">Tenure Duration</span>
-              <span className="spec-value">{loan.tenureMonths} Months</span>
+              <span className="spec-label">{t('loans.columns.tenure')}</span>
+              <span className="spec-value">{loan.tenureMonths} {t('loanDetail.tenureMonths', { months: '' })}</span>
             </div>
 
             <div className="spec-item">
-              <span className="spec-label">Annual Interest Rate</span>
+              <span className="spec-label">{t('loanDetail.interestRate')}</span>
               <span className="spec-value">{loan.interestRate || 0}% p.a.</span>
             </div>
 
             <div className="spec-item">
-              <span className="spec-label">Repayment Frequency</span>
+              <span className="spec-label">{t('repayments.columns.installment')}</span>
               <span className="spec-value">{loan.repaymentFrequency || 'MONTHLY'}</span>
             </div>
 
             {loan.disbursedAmount > 0 && (
               <div className="spec-item">
-                <span className="spec-label">Disbursed Amount</span>
+                <span className="spec-label">{t('loanDetail.disbursedAmount')}</span>
                 <span className="spec-value text-indigo">
                   ₹{loan.disbursedAmount?.toLocaleString('en-IN')}
                 </span>
@@ -323,7 +326,7 @@ const LoanDetail = () => {
 
             {loan.disbursedDate && (
               <div className="spec-item">
-                <span className="spec-label">Disbursement Date</span>
+                <span className="spec-label">{t('repayments.columns.dueDate')}</span>
                 <span className="spec-value">
                   {new Date(loan.disbursedDate).toLocaleDateString('en-IN')}
                 </span>
@@ -333,7 +336,7 @@ const LoanDetail = () => {
 
           {loan.remarks && (
             <div className="remarks-box">
-              <strong>Administrative Audit Remarks:</strong>
+              <strong>{t('loans.modals.remarksLabel')}:</strong>
               <p>{loan.remarks}</p>
             </div>
           )}
@@ -343,7 +346,7 @@ const LoanDetail = () => {
         <div className="detail-card glass-panel">
           <h3 className="card-section-title">
             <User size={18} className="text-emerald" />
-            <span>Farmer Member Profile</span>
+            <span>{t('loanDetail.applicantCard')}</span>
           </h3>
 
           <div className="borrower-profile">
@@ -353,7 +356,7 @@ const LoanDetail = () => {
               </div>
               <div>
                 <h4 className="borrower-name">{farmer.name || 'Farmer Member'}</h4>
-                <span className="borrower-role">FARMER MEMBER</span>
+                <span className="borrower-role">{t('header.fpoAdminRole')}</span>
               </div>
             </div>
 
@@ -368,7 +371,7 @@ const LoanDetail = () => {
               </div>
               <div className="info-row">
                 <Building2 size={15} className="info-icon" />
-                <span>{farmer.fpoName || 'Green Valley FPO'}</span>
+                <span>{farmer.fpoName || t('profile.defaultFpo')}</span>
               </div>
               <div className="info-row">
                 <MapPin size={15} className="info-icon" />
@@ -387,23 +390,23 @@ const LoanDetail = () => {
         <div className="repayments-schedule-card glass-panel">
           <h3 className="card-section-title">
             <CreditCard size={18} className="text-indigo" />
-            <span>Generated Repayment Schedule ({repayments.length} Installments)</span>
+            <span>{t('repayments.scheduleModal.title', { id: loan._id.substring(0, 8) })}</span>
           </h3>
 
           {repayments.length === 0 ? (
-            <p className="no-docs-text">Repayment schedule loading or empty...</p>
+            <p className="no-docs-text">{t('repayments.scheduleModal.noSchedule')}</p>
           ) : (
             <div className="repayments-table-wrapper">
               <table className="repayments-table">
                 <thead>
                   <tr>
-                    <th>Installment #</th>
-                    <th>Due Date</th>
-                    <th>Amount Due</th>
-                    <th>Amount Paid</th>
-                    <th>Status</th>
-                    <th>Payment Method</th>
-                    <th>Paid Date</th>
+                    <th>{t('repayments.columns.installment')}</th>
+                    <th>{t('repayments.columns.dueDate')}</th>
+                    <th>{t('repayments.columns.amountDue')}</th>
+                    <th>{t('repayments.columns.amountPaid')}</th>
+                    <th>{t('repayments.columns.paymentStatus')}</th>
+                    <th>{t('repayments.payModal.methodLabel')}</th>
+                    <th>{t('common.date')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -436,9 +439,9 @@ const LoanDetail = () => {
       <ConfirmDialog
         isOpen={activeActionModal === 'under-review'}
         type="info"
-        title="Move Application to UNDER REVIEW?"
-        message="Transition this loan application into UNDER REVIEW status for administrative evaluation?"
-        confirmText="Confirm Under Review"
+        title={t('loanDetail.markUnderReview')}
+        message={t('confirmDialog.defaultMessage')}
+        confirmText={t('common.confirm')}
         onConfirm={handleExecuteAction}
         onCancel={() => setActiveActionModal(null)}
         loading={actionLoading}
@@ -451,7 +454,7 @@ const LoanDetail = () => {
             <div className="modal-header">
               <div className="title-group">
                 <CheckCircle2 size={24} className="text-emerald" />
-                <h3>Approve Loan Application</h3>
+                <h3>{t('loans.modals.approveTitle')}</h3>
               </div>
               <button className="modal-close-btn" onClick={() => setActiveActionModal(null)} disabled={actionLoading}>
                 &times;
@@ -459,7 +462,7 @@ const LoanDetail = () => {
             </div>
             <div className="modal-body">
               <div className="form-group">
-                <label className="form-label">Interest Rate (% p.a.)</label>
+                <label className="form-label">{t('loans.modals.interestRateLabel')}</label>
                 <input
                   type="number"
                   min="0"
@@ -471,7 +474,7 @@ const LoanDetail = () => {
                 />
               </div>
               <div className="form-group">
-                <label className="form-label">Tenure Duration (Months)</label>
+                <label className="form-label">{t('loans.columns.tenure')}</label>
                 <input
                   type="number"
                   min="1"
@@ -482,7 +485,7 @@ const LoanDetail = () => {
                 />
               </div>
               <div className="form-group">
-                <label className="form-label">Approval Remarks</label>
+                <label className="form-label">{t('loans.modals.remarksLabel')}</label>
                 <textarea
                   className="form-textarea"
                   rows="3"
@@ -494,10 +497,10 @@ const LoanDetail = () => {
             </div>
             <div className="modal-footer">
               <button className="btn btn-secondary" onClick={() => setActiveActionModal(null)} disabled={actionLoading}>
-                Cancel
+                {t('common.cancel')}
               </button>
               <button className="btn approve-btn" onClick={handleExecuteAction} disabled={actionLoading}>
-                {actionLoading ? 'Approving...' : 'Confirm Approval'}
+                {actionLoading ? t('common.loading') : t('loans.modals.confirmApproveBtn')}
               </button>
             </div>
           </div>
@@ -511,7 +514,7 @@ const LoanDetail = () => {
             <div className="modal-header">
               <div className="title-group">
                 <XCircle size={24} className="text-rose" />
-                <h3>Reject Loan Application</h3>
+                <h3>{t('loans.modals.rejectTitle')}</h3>
               </div>
               <button className="modal-close-btn" onClick={() => setActiveActionModal(null)} disabled={actionLoading}>
                 &times;
@@ -519,10 +522,11 @@ const LoanDetail = () => {
             </div>
             <div className="modal-body">
               <div className="form-group">
-                <label className="form-label">Rejection Remarks *</label>
+                <label className="form-label">{t('loans.modals.rejectionRemarksLabel')} *</label>
                 <textarea
                   className="form-textarea"
                   rows="3"
+                  placeholder={t('loans.modals.rejectionRemarksPlaceholder')}
                   value={actionForm.remarks}
                   onChange={(e) => setActionForm({ ...actionForm, remarks: e.target.value })}
                   disabled={actionLoading}
@@ -532,10 +536,10 @@ const LoanDetail = () => {
             </div>
             <div className="modal-footer">
               <button className="btn btn-secondary" onClick={() => setActiveActionModal(null)} disabled={actionLoading}>
-                Cancel
+                {t('common.cancel')}
               </button>
               <button className="btn reject-btn" onClick={handleExecuteAction} disabled={actionLoading}>
-                {actionLoading ? 'Rejecting...' : 'Confirm Rejection'}
+                {actionLoading ? t('common.loading') : t('loans.modals.confirmRejectBtn')}
               </button>
             </div>
           </div>
@@ -549,7 +553,7 @@ const LoanDetail = () => {
             <div className="modal-header">
               <div className="title-group">
                 <Banknote size={24} className="text-indigo" />
-                <h3>Disburse Loan Funds</h3>
+                <h3>{t('loans.modals.disburseTitle')}</h3>
               </div>
               <button className="modal-close-btn" onClick={() => setActiveActionModal(null)} disabled={actionLoading}>
                 &times;
@@ -557,7 +561,7 @@ const LoanDetail = () => {
             </div>
             <div className="modal-body">
               <div className="form-group">
-                <label className="form-label">Disbursed Amount (₹)</label>
+                <label className="form-label">{t('loans.modals.disbursedAmountLabel')}</label>
                 <input
                   type="number"
                   min="1"
@@ -570,10 +574,10 @@ const LoanDetail = () => {
             </div>
             <div className="modal-footer">
               <button className="btn btn-secondary" onClick={() => setActiveActionModal(null)} disabled={actionLoading}>
-                Cancel
+                {t('common.cancel')}
               </button>
               <button className="btn disburse-btn" onClick={handleExecuteAction} disabled={actionLoading}>
-                {actionLoading ? 'Disbursing...' : 'Disburse Funds'}
+                {actionLoading ? t('common.loading') : t('loans.modals.confirmDisburseBtn')}
               </button>
             </div>
           </div>

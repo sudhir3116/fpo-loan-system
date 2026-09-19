@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import './Pagination.css';
 
@@ -12,6 +13,7 @@ const Pagination = ({
   pageSizeOptions = [10, 25, 50, 100],
   className = '',
 }) => {
+  const { t } = useTranslation();
   if (totalItems === 0) return null;
 
   const startItem = (currentPage - 1) * pageSize + 1;
@@ -20,15 +22,15 @@ const Pagination = ({
   return (
     <div className={`pagination-container ${className}`}>
       <div className="pagination-info">
-        Showing <span className="highlight-text">{startItem}</span> to{' '}
-        <span className="highlight-text">{endItem}</span> of{' '}
-        <span className="highlight-text">{totalItems}</span> entries
+        {t('common.showing')} <span className="highlight-text">{startItem}</span> {t('common.to')}{' '}
+        <span className="highlight-text">{endItem}</span> {t('common.of')}{' '}
+        <span className="highlight-text">{totalItems}</span> {t('common.entries')}
       </div>
 
       <div className="pagination-controls-wrapper">
         {onPageSizeChange && (
           <div className="page-size-selector">
-            <span className="selector-label">Per page:</span>
+            <span className="selector-label">{t('common.perPage')}:</span>
             <select
               value={pageSize}
               onChange={(e) => onPageSizeChange(Number(e.target.value))}
@@ -48,7 +50,7 @@ const Pagination = ({
             className="pagination-btn"
             onClick={() => onPageChange(1)}
             disabled={currentPage === 1}
-            title="First Page"
+            title={t('common.previous')}
           >
             <ChevronsLeft size={16} />
           </button>
@@ -56,20 +58,20 @@ const Pagination = ({
             className="pagination-btn"
             onClick={() => onPageChange(currentPage - 1)}
             disabled={currentPage === 1}
-            title="Previous Page"
+            title={t('common.previous')}
           >
             <ChevronLeft size={16} />
           </button>
 
           <span className="page-indicator">
-            Page {currentPage} of {totalPages || 1}
+            {currentPage} / {totalPages || 1}
           </span>
 
           <button
             className="pagination-btn"
             onClick={() => onPageChange(currentPage + 1)}
             disabled={currentPage >= totalPages}
-            title="Next Page"
+            title={t('common.next')}
           >
             <ChevronRight size={16} />
           </button>
@@ -77,7 +79,7 @@ const Pagination = ({
             className="pagination-btn"
             onClick={() => onPageChange(totalPages)}
             disabled={currentPage >= totalPages}
-            title="Last Page"
+            title={t('common.next')}
           >
             <ChevronsRight size={16} />
           </button>
