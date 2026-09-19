@@ -44,7 +44,7 @@ The primary objectives implemented across the architecture include:
 
 ## ✨ Key Features
 
-### 👨‍🌾 Farmer Module (`farmer-frontend/`)
+### 👨‍🌾 Farmer Features
 - **Self-Registration & Authentication**: Sign up as an active farmer member and authenticate securely via JSON Web Tokens.
 - **Loan Application Submission**: Submit agricultural loan requests with custom amounts, tenure durations, and agricultural purpose.
 - **Loan Portfolio Dashboard**: View all submitted, under-review, approved, active, and closed loans associated with the logged-in farmer.
@@ -55,7 +55,7 @@ The primary objectives implemented across the architecture include:
 ### 👨‍💼 FPO Admin Module (`frontend/`)
 - **Protected Administrator Authentication**: Admin accounts require role verification and secure authentication (including Google OAuth support).
 - **Application Queue & Filtering**: Review all loan applications across the organization with status-based filtering (`SUBMITTED`, `UNDER_REVIEW`, `APPROVED`, `REJECTED`, `DISBURSED`, `CLOSED`).
-- **Application Evaluation**: Transition applications from `SUBMITTED` into `UNDER_REVIEW`, followed by `APPROVED` or `REJECTED` (with mandatory rejection remarks).
+- **Application Evaluation**: Transition applications from `SUBMITTED` into `UNDER_REVIEW`, followed by `APPROVED` or `REJECTED` (with mandatory rejection reasons).
 - **Disbursement Recording**: Disburse approved loans, automatically triggering repayment installment generation.
 - **Document Verification**: Review uploaded farmer documents with dedicated actions to mark them `VERIFIED` or `REJECTED` (with recorded rejection reasons and timestamps).
 - **Payment Recording**: Record offline, bank transfer, or UPI installment receipts with partial payment support, accumulated payment totals, and transaction reference numbers.
@@ -94,13 +94,6 @@ fpo-loan-system/
 │   ├── package.json
 │   ├── vite.config.js
 │   └── .env.example
-├── farmer-frontend/               # Farmer Self-Service Portal Frontend (Port 3000)
-│   ├── src/                       # Farmer Portal, Application Form, Document Upload, EMI View
-│   ├── package.json
-│   ├── vite.config.js
-│   ├── tailwind.config.js
-│   ├── postcss.config.js
-│   └── .env.example
 └── README.md
 ```
 
@@ -114,7 +107,6 @@ fpo-loan-system/
 | **Database** | MongoDB Atlas & Mongoose | Cloud NoSQL document database and schema validation |
 | **Cloud Storage** | Cloudinary SDK | Cloud storage for farmer KYC and land documentation |
 | **Admin Frontend** | React 18, Vite, React Router v7 | FPO Administrator and Officer dashboard management |
-| **Farmer Frontend** | React 18, Vite, Tailwind CSS, React Router v6 | Farmer portal for loan applications, uploads, and schedule tracking |
 | **Authentication** | JWT (Bearer Tokens) & Google OAuth | Stateless, role-based authorization |
 | **Testing** | `mongodb-memory-server` & Custom Suites | 99/99 automated verification test assertions |
 
@@ -183,18 +175,11 @@ npm install
 npm run dev
 ```
 
-### 3. Farmer Portal Setup (Port 3000)
-```bash
-cd farmer-frontend
-npm install
-npm run dev
-```
-
 ---
 
 ## 👥 Team Contributions
 
-- **Sasthika D** — Farmer Module Frontend & Self-Service Workflows
+- **Sasthika D** — Farmer Workflows & Self-Service Features
 - **Rhidhanya K** — Admin Module Frontend & Verification Workflows
 - **Sudhir S** — Backend Architecture, Database Engineering & API Design
 
