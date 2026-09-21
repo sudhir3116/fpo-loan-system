@@ -1,5 +1,6 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   LayoutDashboard,
   Users,
@@ -16,31 +17,30 @@ import {
   FileCheck,
   Banknote,
   AlertTriangle,
-  ScrollText,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import './Sidebar.css';
 
 const Sidebar = ({ isCollapsed, onToggleCollapse, isMobileOpen, onCloseMobile }) => {
+  const { t } = useTranslation();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    navigate('/login', { replace: true });
   };
 
   const navItems = [
-    { label: 'Dashboard',            path: '/admin/dashboard',     icon: LayoutDashboard },
-    { label: 'Farmers',              path: '/admin/farmers',        icon: Users },
-    { label: 'Loan Applications',    path: '/admin/loans',          icon: FileText },
-    { label: 'Document Verification',path: '/admin/documents',      icon: FileCheck },
-    { label: 'Loan Disbursement',    path: '/admin/disbursements',  icon: Banknote },
-    { label: 'Repayments',           path: '/admin/repayments',     icon: CreditCard },
-    { label: 'Overdue / Defaulters', path: '/admin/overdue',        icon: AlertTriangle },
-    { label: 'Reports',              path: '/admin/reports',        icon: BarChart3 },
-    { label: 'Notifications',        path: '/admin/notifications',  icon: Bell },
-    { label: 'Audit Log',            path: '/admin/audit-log',      icon: ScrollText },
+    { labelKey: 'nav.dashboard',            path: '/admin/dashboard',     icon: LayoutDashboard },
+    { labelKey: 'nav.farmers',              path: '/admin/farmers',        icon: Users },
+    { labelKey: 'nav.loanApplications',    path: '/admin/loans',          icon: FileText },
+    { labelKey: 'nav.documentVerification',path: '/admin/documents',      icon: FileCheck },
+    { labelKey: 'nav.loanDisbursement',    path: '/admin/disbursements',  icon: Banknote },
+    { labelKey: 'nav.repayments',           path: '/admin/repayments',     icon: CreditCard },
+    { labelKey: 'nav.overdue',              path: '/admin/overdue',        icon: AlertTriangle },
+    { labelKey: 'nav.reports',              path: '/admin/reports',        icon: BarChart3 },
+    { labelKey: 'nav.notifications',        path: '/admin/notifications',  icon: Bell },
   ];
 
   return (
@@ -66,8 +66,8 @@ const Sidebar = ({ isCollapsed, onToggleCollapse, isMobileOpen, onCloseMobile })
           </div>
           {!isCollapsed && (
             <div className="brand-titles">
-              <h2 className="brand-name">FPO Credit</h2>
-              <span className="brand-sub">Management System</span>
+              <h2 className="brand-name">{t('nav.brandName')}</h2>
+              <span className="brand-sub">{t('nav.brandSub')}</span>
             </div>
           )}
           <button
@@ -95,6 +95,7 @@ const Sidebar = ({ isCollapsed, onToggleCollapse, isMobileOpen, onCloseMobile })
         <nav className="sidebar-navigation">
           {navItems.map((item) => {
             const Icon = item.icon;
+            const translatedLabel = t(item.labelKey);
             return (
               <NavLink
                 key={item.path}
@@ -103,10 +104,10 @@ const Sidebar = ({ isCollapsed, onToggleCollapse, isMobileOpen, onCloseMobile })
                 className={({ isActive }) =>
                   `sidebar-nav-item ${isActive ? 'active' : ''}`
                 }
-                title={isCollapsed ? item.label : undefined}
+                title={isCollapsed ? translatedLabel : undefined}
               >
                 <Icon size={20} className="nav-item-icon" />
-                {!isCollapsed && <span className="nav-item-label">{item.label}</span>}
+                {!isCollapsed && <span className="nav-item-label">{translatedLabel}</span>}
               </NavLink>
             );
           })}
@@ -118,20 +119,20 @@ const Sidebar = ({ isCollapsed, onToggleCollapse, isMobileOpen, onCloseMobile })
             type="button"
             className="sidebar-collapse-toggle-btn"
             onClick={onToggleCollapse}
-            title={isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
+            title={isCollapsed ? t('nav.expandMenu') : t('nav.collapseMenu')}
           >
             {isCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
-            {!isCollapsed && <span>Collapse Menu</span>}
+            {!isCollapsed && <span>{t('nav.collapseMenu')}</span>}
           </button>
 
           <button
             type="button"
             onClick={handleLogout}
             className="sidebar-logout-btn"
-            title={isCollapsed ? 'Sign Out' : undefined}
+            title={isCollapsed ? t('nav.signOut') : undefined}
           >
             <LogOut size={18} />
-            {!isCollapsed && <span>Sign Out</span>}
+            {!isCollapsed && <span>{t('nav.signOut')}</span>}
           </button>
         </div>
       </aside>

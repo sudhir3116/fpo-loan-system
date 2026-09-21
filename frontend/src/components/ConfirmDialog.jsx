@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AlertCircle, CheckCircle, HelpCircle, X } from 'lucide-react';
 import './ConfirmDialog.css';
 
@@ -6,13 +7,15 @@ const ConfirmDialog = ({
   isOpen,
   title,
   message,
-  confirmText = 'Confirm',
-  cancelText = 'Cancel',
+  confirmText,
+  cancelText,
   type = 'info', // 'info' | 'danger' | 'warning' | 'success'
   onConfirm,
   onCancel,
   loading = false,
 }) => {
+  const { t } = useTranslation();
+
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape' && isOpen && !loading) {
@@ -37,6 +40,9 @@ const ConfirmDialog = ({
     warning: <AlertCircle size={28} className="dialog-icon icon-warning" />,
     success: <CheckCircle size={28} className="dialog-icon icon-success" />,
   };
+
+  const finalConfirmText = confirmText || t('confirm.confirmAction');
+  const finalCancelText = cancelText || t('confirm.cancelAction');
 
   return (
     <div className="confirm-dialog-overlay" onClick={!loading ? onCancel : undefined}>
@@ -71,7 +77,7 @@ const ConfirmDialog = ({
             onClick={onCancel}
             disabled={loading}
           >
-            {cancelText}
+            {finalCancelText}
           </button>
           <button
             type="button"
@@ -79,7 +85,7 @@ const ConfirmDialog = ({
             onClick={onConfirm}
             disabled={loading}
           >
-            {loading ? 'Processing...' : confirmText}
+            {loading ? t('common.loading') : finalConfirmText}
           </button>
         </div>
       </div>

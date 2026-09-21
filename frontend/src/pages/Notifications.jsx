@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Bell,
   AlertTriangle,
@@ -30,6 +31,7 @@ import {
 import './Notifications.css';
 
 const Notifications = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { showSuccess, showError } = useToast();
 
@@ -108,8 +110,9 @@ const Notifications = () => {
       if (st === 'SUBMITTED') {
         list.push({
           id: `notif-loan-sub-${loan._id}`,
-          title: 'New Loan Application Submitted',
-          description: `${farmerName} submitted a new loan application for ₹${loan.loanAmount?.toLocaleString('en-IN')} (${loan.purpose || 'Agricultural Loan'}).`,
+          titleKey: 'notifications.newLoanSubmittedTitle',
+          descKey: 'notifications.newLoanSubmittedDesc',
+          descParams: { farmer: farmerName, amount: loan.loanAmount?.toLocaleString('en-IN'), purpose: loan.purpose || 'Agricultural Loan' },
           category: 'LOANS',
           priority: 'HIGH',
           actionRequired: true,
@@ -122,8 +125,9 @@ const Notifications = () => {
       } else if (st === 'UNDER_REVIEW') {
         list.push({
           id: `notif-loan-rev-${loan._id}`,
-          title: 'Application Awaiting Credit Decision',
-          description: `Loan #${loan._id.substring(0, 8)}... for ${farmerName} is under review and requires approval/rejection.`,
+          titleKey: 'notifications.awaitingDecisionTitle',
+          descKey: 'notifications.awaitingDecisionDesc',
+          descParams: { loanId: loan._id.substring(0, 8), farmer: farmerName },
           category: 'LOANS',
           priority: 'MEDIUM',
           actionRequired: true,
@@ -136,8 +140,9 @@ const Notifications = () => {
       } else if (st === 'APPROVED') {
         list.push({
           id: `notif-loan-app-${loan._id}`,
-          title: 'Approved Loan Awaiting Disbursement',
-          description: `Loan #${loan._id.substring(0, 8)}... for ₹${loan.loanAmount?.toLocaleString('en-IN')} has been approved and is ready for disbursement.`,
+          titleKey: 'notifications.awaitingDisbursementTitle',
+          descKey: 'notifications.awaitingDisbursementDesc',
+          descParams: { loanId: loan._id.substring(0, 8), amount: loan.loanAmount?.toLocaleString('en-IN') },
           category: 'LOANS',
           priority: 'HIGH',
           actionRequired: true,
@@ -158,8 +163,9 @@ const Notifications = () => {
         const loanIdStr = typeof repay.loan === 'object' ? repay.loan._id : repay.loan;
         list.push({
           id: `notif-repay-over-${repay._id}`,
-          title: 'Overdue Installment Payment Alert',
-          description: `Installment #${repay.installmentNumber} of ₹${repay.amountDue?.toLocaleString('en-IN')} for ${borrowerName} is overdue (Due: ${new Date(repay.dueDate).toLocaleDateString('en-IN')}).`,
+          titleKey: 'notifications.overdueAlertTitle',
+          descKey: 'notifications.overdueAlertDesc',
+          descParams: { installmentNo: repay.installmentNumber, amount: repay.amountDue?.toLocaleString('en-IN'), borrower: borrowerName, dueDate: new Date(repay.dueDate).toLocaleDateString('en-IN') },
           category: 'REPAYMENTS',
           priority: 'HIGH',
           actionRequired: true,
@@ -179,8 +185,9 @@ const Notifications = () => {
         const loanIdStr = typeof doc.loan === 'object' ? doc.loan._id : doc.loan;
         list.push({
           id: `notif-doc-rej-${doc._id}`,
-          title: 'Document Verification Rejected',
-          description: `Document "${doc.documentType || 'Uploaded Document'}" for loan #${(loanIdStr || '').substring(0, 8)} was rejected. Remarks: "${doc.rejectionReason || 'Invalid document'}"`,
+          titleKey: 'notifications.docRejectedTitle',
+          descKey: 'notifications.docRejectedDesc',
+          descParams: { docType: doc.documentType || 'Uploaded Document', loanId: (loanIdStr || '').substring(0, 8), remarks: doc.rejectionReason || 'Invalid document' },
           category: 'DOCUMENTS',
           priority: 'MEDIUM',
           actionRequired: true,
@@ -193,7 +200,6 @@ const Notifications = () => {
       }
     });
 
-    // Sort chronologically (newest first)
     list.sort((a, b) => new Date(b.date) - new Date(a.date));
     return list;
   }, [loans, repayments, documents]);
@@ -265,19 +271,18 @@ const Notifications = () => {
   return (
     <div className="notifications-page-container">
       <PageHeader
-        title="Admin System Alerts & Notifications"
-        subtitle="Operational event triggers, pending review reminders, and overdue repayment alerts compiled from backend state"
+        title={t('notifications.title')}
         actions={
           <div className="notif-header-actions">
             {unreadCount > 0 && (
               <button onClick={handleMarkAllRead} className="btn btn-secondary">
                 <CheckCheck size={15} />
-                <span>Mark All Read ({unreadCount})</span>
+                <span>{t('notifications.markAllRead', { count: unreadCount })}</span>
               </button>
             )}
             <button onClick={handleClearRead} className="btn btn-secondary">
               <RefreshCw size={15} />
-              <span>Reset State</span>
+              <span>{t('notifications.resetState')}</span>
             </button>
             <button onClick={fetchNotificationData} className="btn btn-secondary" disabled={loading}>
               <RefreshCw size={15} className={loading ? 'spinning' : ''} />
@@ -292,10 +297,9 @@ const Notifications = () => {
           <Info size={20} className="text-amber" />
         </div>
         <div className="notice-content">
-          <div className="notice-title">Backend Push Notification API Disclosure</div>
+          <div className="notice-title">{t('notifications.backendNoticeTitle')}</div>
           <div className="notice-description">
-            Notice: No dedicated <code>/api/notifications</code> push endpoint exists in the current backend server schema.
-            The operational action alerts rendered below are <strong>dynamically compiled from active backend domain records</strong> (Loans, Repayments, Documents) to ensure 100% accurate, non-fake administrative oversight.
+            {t('notifications.backendNoticeDesc')}
           </div>
         </div>
       </div>
@@ -306,58 +310,54 @@ const Notifications = () => {
           className={`notif-filter-chip ${categoryFilter === 'ALL' ? 'active' : ''}`}
           onClick={() => setCategoryFilter('ALL')}
         >
-          <span>All Alerts</span>
+          <span>{t('notifications.allAlerts')}</span>
           <span className="count-pill">{allNotifications.length}</span>
         </button>
         <button
           className={`notif-filter-chip ${categoryFilter === 'UNREAD' ? 'active' : ''}`}
           onClick={() => setCategoryFilter('UNREAD')}
         >
-          <span>Unread</span>
+          <span>{t('notifications.unread')}</span>
           {unreadCount > 0 && <span className="count-pill unread">{unreadCount}</span>}
         </button>
         <button
           className={`notif-filter-chip ${categoryFilter === 'ACTION_REQUIRED' ? 'active' : ''}`}
           onClick={() => setCategoryFilter('ACTION_REQUIRED')}
         >
-          <span>Action Required</span>
+          <span>{t('notifications.actionRequired')}</span>
         </button>
         <button
           className={`notif-filter-chip ${categoryFilter === 'LOANS' ? 'active' : ''}`}
           onClick={() => setCategoryFilter('LOANS')}
         >
-          <span>Loans</span>
+          <span>{t('nav.loanApplications')}</span>
         </button>
         <button
           className={`notif-filter-chip ${categoryFilter === 'REPAYMENTS' ? 'active' : ''}`}
           onClick={() => setCategoryFilter('REPAYMENTS')}
         >
-          <span>Repayments</span>
+          <span>{t('nav.repayments')}</span>
         </button>
         <button
           className={`notif-filter-chip ${categoryFilter === 'DOCUMENTS' ? 'active' : ''}`}
           onClick={() => setCategoryFilter('DOCUMENTS')}
         >
-          <span>Documents</span>
+          <span>{t('nav.documentVerification')}</span>
         </button>
       </div>
 
       {/* Main Content Area */}
       {loading ? (
         <div className="notif-loading-card glass-panel">
-          <LoadingSpinner message="Scanning backend loan, repayment, and document registers for actionable alerts..." />
+          <LoadingSpinner message={t('common.loading')} />
         </div>
       ) : error ? (
         <ErrorState title="Failed to Fetch Notifications" message={error} onRetry={fetchNotificationData} />
       ) : filteredNotifications.length === 0 ? (
         <div className="notif-empty-card glass-panel">
           <EmptyState
-            title={categoryFilter === 'UNREAD' ? 'No Unread Notifications' : 'All Clear! No Active Alerts'}
-            description={
-              categoryFilter === 'UNREAD'
-                ? 'You have caught up with all administrative notifications and system alerts.'
-                : 'There are currently no pending review tasks or overdue repayment warnings matching your selected filter.'
-            }
+            title={categoryFilter === 'UNREAD' ? t('notifications.noUnread') : t('notifications.allClear')}
+            description={t('notifications.noNotifications')}
           />
         </div>
       ) : (
@@ -378,15 +378,16 @@ const Notifications = () => {
 
                 <div className="notif-card-body">
                   <div className="notif-card-header">
-                    <h4 className="notif-title">{notif.title}</h4>
+                    <h4 className="notif-title">{t(notif.titleKey)}</h4>
                     <div className="notif-meta-tags">
                       <span className={`category-tag ${notif.category.toLowerCase()}`}>{notif.category}</span>
-                      {notif.priority === 'HIGH' && <span className="priority-tag high">High Priority</span>}
+                      {notif.priority === 'HIGH' && <span className="priority-tag high">{t('notifications.highPriority')}</span>}
+                      {notif.priority === 'MEDIUM' && <span className="priority-tag medium">{t('notifications.mediumPriority')}</span>}
                       <span className="notif-time">{formatRelativeTime(notif.date)}</span>
                     </div>
                   </div>
 
-                  <p className="notif-description">{notif.description}</p>
+                  <p className="notif-description">{t(notif.descKey, notif.descParams)}</p>
 
                   <div className="notif-card-footer">
                     <button
@@ -397,17 +398,17 @@ const Notifications = () => {
                         navigate(notif.targetUrl);
                       }}
                     >
-                      <span>Take Action</span>
+                      <span>{t('notifications.takeAction')}</span>
                       <ExternalLink size={13} />
                     </button>
 
                     <button
                       className="btn-mark-read"
-                      title={isRead ? 'Mark as Unread' : 'Mark as Read'}
+                      title={isRead ? t('notifications.markUnread') : t('notifications.markRead')}
                       onClick={(e) => handleToggleRead(notif.id, e)}
                     >
                       {isRead ? <CircleDot size={15} /> : <CheckCircle2 size={15} />}
-                      <span>{isRead ? 'Mark Unread' : 'Mark Read'}</span>
+                      <span>{isRead ? t('notifications.markUnread') : t('notifications.markRead')}</span>
                     </button>
                   </div>
                 </div>
@@ -426,7 +427,7 @@ const Notifications = () => {
             <div className="modal-header">
               <div className="modal-header-left">
                 <selectedNotification.icon className={`text-${selectedNotification.iconColor}`} size={22} />
-                <h3>{selectedNotification.title}</h3>
+                <h3>{t(selectedNotification.titleKey)}</h3>
               </div>
               <button className="modal-close-btn" onClick={() => setSelectedNotification(null)}>
                 ×
@@ -435,27 +436,27 @@ const Notifications = () => {
 
             <div className="modal-body">
               <div className="notif-detail-row">
-                <span className="detail-label">Category:</span>
+                <span className="detail-label">{t('notifications.category')}:</span>
                 <span className={`category-tag ${selectedNotification.category.toLowerCase()}`}>
                   {selectedNotification.category}
                 </span>
               </div>
 
               <div className="notif-detail-row">
-                <span className="detail-label">Timestamp:</span>
+                <span className="detail-label">{t('notifications.timestamp')}:</span>
                 <span>{new Date(selectedNotification.date).toLocaleString('en-IN')}</span>
               </div>
 
               <div className="notif-detail-row">
-                <span className="detail-label">Priority Level:</span>
+                <span className="detail-label">{t('notifications.priorityLevel')}:</span>
                 <span className={`priority-tag ${selectedNotification.priority.toLowerCase()}`}>
-                  {selectedNotification.priority}
+                  {selectedNotification.priority === 'HIGH' ? t('notifications.highPriority') : t('notifications.mediumPriority')}
                 </span>
               </div>
 
               <div className="notif-detail-box">
-                <span className="detail-label">Notification Summary:</span>
-                <p>{selectedNotification.description}</p>
+                <span className="detail-label">{t('common.details')}:</span>
+                <p>{t(selectedNotification.descKey, selectedNotification.descParams)}</p>
               </div>
 
               {selectedNotification.meta && (
@@ -473,7 +474,7 @@ const Notifications = () => {
 
             <div className="modal-footer">
               <button className="btn btn-secondary" onClick={() => setSelectedNotification(null)}>
-                Close
+                {t('common.close')}
               </button>
               <button
                 className="btn btn-primary"

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   FileCheck,
   Search,
@@ -21,6 +22,7 @@ import {
 import './DocumentVerification.css';
 
 const DocumentVerification = () => {
+  const { t } = useTranslation();
   const { showError } = useToast();
 
   const [loading, setLoading] = useState(true);
@@ -43,7 +45,7 @@ const DocumentVerification = () => {
         setDocuments(response.data.data?.documents || []);
       }
     } catch (err) {
-      const msg = err.response?.data?.message || 'Failed to load documents';
+      const msg = err.response?.data?.message || t('documents.loadingDocs');
       setError(msg);
       showError(msg);
     } finally {
@@ -75,7 +77,7 @@ const DocumentVerification = () => {
       .getAllDocuments({})
       .then((r) => setAllDocs(r.data?.data?.documents || []))
       .catch(() => {});
-  }, [documents]); // refresh summary whenever main data changes
+  }, [documents]);
 
   const summary = useMemo(() => ({
     total: allDocs.length,
@@ -85,17 +87,16 @@ const DocumentVerification = () => {
   }), [allDocs]);
 
   const STATUS_TABS = [
-    { key: 'ALL',      label: 'All Documents', icon: FileText,   count: summary.total },
-    { key: 'PENDING',  label: 'Pending',        icon: Clock,      count: summary.pending },
-    { key: 'VERIFIED', label: 'Verified',       icon: ShieldCheck,count: summary.verified },
-    { key: 'REJECTED', label: 'Rejected',       icon: XCircle,    count: summary.rejected },
+    { key: 'ALL',      label: t('documents.allDocs'),      icon: FileText,   count: summary.total },
+    { key: 'PENDING',  label: t('documents.pending'),      icon: Clock,      count: summary.pending },
+    { key: 'VERIFIED', label: t('documents.verified'),     icon: ShieldCheck,count: summary.verified },
+    { key: 'REJECTED', label: t('documents.rejected'),     icon: XCircle,    count: summary.rejected },
   ];
 
   return (
     <div className="docver-page-container">
       <PageHeader
-        title="Document Verification"
-        subtitle="Review and verify farmer documents for loan applications"
+        title={t('documents.title')}
         icon={<FileCheck size={22} />}
       />
 
@@ -103,35 +104,35 @@ const DocumentVerification = () => {
       <div className="metrics-overview-grid">
         <div className="metric-card">
           <div className="metric-header">
-            <span className="metric-title">Total Documents</span>
+            <span className="metric-title">{t('documents.totalDocs')}</span>
             <div className="metric-icon-box blue"><FileText size={18} /></div>
           </div>
           <div className="metric-main-value">{summary.total}</div>
-          <div className="metric-footer-text">All uploaded documents</div>
+          <div className="metric-footer-text">{t('documents.allUploadedDocs')}</div>
         </div>
         <div className="metric-card">
           <div className="metric-header">
-            <span className="metric-title">Pending Review</span>
+            <span className="metric-title">{t('documents.pendingReview')}</span>
             <div className="metric-icon-box amber"><Clock size={18} /></div>
           </div>
           <div className="metric-main-value">{summary.pending}</div>
-          <div className="metric-footer-text">Awaiting admin action</div>
+          <div className="metric-footer-text">{t('documents.awaitingAdminAction')}</div>
         </div>
         <div className="metric-card">
           <div className="metric-header">
-            <span className="metric-title">Verified</span>
+            <span className="metric-title">{t('documents.verified')}</span>
             <div className="metric-icon-box emerald"><ShieldCheck size={18} /></div>
           </div>
           <div className="metric-main-value">{summary.verified}</div>
-          <div className="metric-footer-text">Approved documents</div>
+          <div className="metric-footer-text">{t('documents.approvedDocs')}</div>
         </div>
         <div className="metric-card">
           <div className="metric-header">
-            <span className="metric-title">Rejected</span>
+            <span className="metric-title">{t('documents.rejected')}</span>
             <div className="metric-icon-box rose"><XCircle size={18} /></div>
           </div>
           <div className="metric-main-value">{summary.rejected}</div>
-          <div className="metric-footer-text">Documents rejected</div>
+          <div className="metric-footer-text">{t('documents.docsRejected')}</div>
         </div>
       </div>
 
@@ -159,7 +160,7 @@ const DocumentVerification = () => {
             <input
               type="text"
               className="search-input"
-              placeholder="Search farmer, document..."
+              placeholder={t('documents.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -168,10 +169,10 @@ const DocumentVerification = () => {
             className="btn btn-secondary refresh-btn"
             onClick={fetchDocuments}
             disabled={loading}
-            title="Refresh"
+            title={t('common.refresh')}
           >
             <RefreshCw size={15} className={loading ? 'spinning' : ''} />
-            <span>Refresh</span>
+            <span>{t('common.refresh')}</span>
           </button>
         </div>
       </div>
@@ -179,21 +180,21 @@ const DocumentVerification = () => {
       {/* Content */}
       {loading ? (
         <div className="docver-loader-wrap">
-          <LoadingSpinner message="Loading documents..." />
+          <LoadingSpinner message={t('documents.loadingDocs')} />
         </div>
       ) : error ? (
         <ErrorState message={error} onRetry={fetchDocuments} />
       ) : filtered.length === 0 ? (
         <EmptyState
           icon={<FileCheck size={40} />}
-          title={statusFilter === 'ALL' ? 'No documents uploaded yet' : `No ${statusFilter.toLowerCase()} documents`}
-          message="Documents uploaded by farmers will appear here."
+          title={statusFilter === 'ALL' ? t('documents.noDocsUploaded') : t('documents.noStatusDocs', { status: statusFilter.toLowerCase() })}
+          message={t('documents.docsEmptyMessage')}
         />
       ) : (
         <div className="glass-panel docver-content-panel">
           <div className="docver-results-header">
             <span className="docver-results-count">
-              Showing {filtered.length} document{filtered.length !== 1 ? 's' : ''}
+              {t('documents.showingDocs', { count: filtered.length })}
             </span>
             {statusFilter !== 'ALL' && (
               <StatusBadge status={statusFilter} size="small" />

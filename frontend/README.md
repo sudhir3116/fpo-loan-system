@@ -1,6 +1,6 @@
-# FPO Loan System - Admin Frontend
+# FarmSphere - Admin Frontend
 
-React.js administration portal for the Farmer Producer Organization (FPO) Loan Application and Repayment System.
+React.js administration portal for FarmSphere Loan Application and Repayment System.
 
 ## Architecture & Structure
 

@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const BASE_URL = 'http://localhost:5000/api';
+const BASE_URL = process.env.VITE_API_BASE_URL || 'http://localhost:5001/api';
 
 async function runRepaymentsVerification() {
   console.log('\n======================================================');
@@ -41,8 +41,8 @@ async function runRepaymentsVerification() {
 
     const repaymentsList = allRepayRes.data?.data?.repayments || [];
     if (repaymentsList.length > 0) {
-      const firstInst = repaymentsList[0];
-      console.log(`Testing installment #${firstInst.installmentNumber} for loan ${firstInst.loan?._id || firstInst.loan}`);
+      const firstInst = repaymentsList.find((r) => r.paymentStatus === 'PENDING') || repaymentsList[0];
+      console.log(`Testing installment #${firstInst.installmentNumber} (paymentStatus: ${firstInst.paymentStatus}) for loan ${firstInst.loan?._id || firstInst.loan}`);
 
       // 3. Test Invalid Negative Payment Rejection (HTTP 400)
       try {

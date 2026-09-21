@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   FileText,
   User,
@@ -22,13 +23,16 @@ import {
   StatusBadge,
   LoadingSpinner,
   ErrorState,
+  EmptyState,
   ConfirmDialog,
+  LoanIdDisplay,
   DocumentReview,
   useToast,
 } from '../components';
 import './LoanDetail.css';
 
 const LoanDetail = () => {
+  const { t } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
   const { showSuccess, showError } = useToast();
@@ -90,15 +94,7 @@ const LoanDetail = () => {
         }
       }
     } catch (err) {
-      const statusCode = err.response?.status;
-      let msg = err.response?.data?.message || err.message || 'Failed to load loan application';
-
-      if (statusCode === 404) msg = 'Loan Application ID not found in database (HTTP 404)';
-      else if (statusCode === 403) msg = 'Forbidden: You do not have permission to view this loan (HTTP 403)';
-      else if (statusCode === 400) msg = 'Invalid Loan ID format (HTTP 400)';
-      else if (statusCode === 500) msg = 'Backend database error loading loan file (HTTP 500)';
-
-      setError(msg);
+      setError(err.response?.data?.message || err.message || t('common.error'));
     } finally {
       setLoading(false);
     }
@@ -116,54 +112,40 @@ const LoanDetail = () => {
     try {
       if (activeActionModal === 'under-review') {
         const res = await loanAPI.markUnderReview(loan._id);
-        showSuccess(res.data?.message || 'Loan status updated to UNDER REVIEW');
+        showSuccess(t('loanDetail.successUnderReview'));
       } else if (activeActionModal === 'approve') {
         const res = await loanAPI.approveLoan(loan._id, {
           interestRate: Number(actionForm.interestRate),
           tenureMonths: Number(actionForm.tenureMonths),
           remarks: actionForm.remarks,
         });
-        showSuccess(res.data?.message || 'Loan application successfully APPROVED');
+        showSuccess(t('loanDetail.successApprove'));
       } else if (activeActionModal === 'reject') {
         if (!actionForm.remarks.trim()) {
-          showError('Rejection remarks are mandatory.');
+          showError(t('loanDetail.rejectionReasonRequired'));
           setActionLoading(false);
           return;
         }
         const res = await loanAPI.rejectLoan(loan._id, {
           remarks: actionForm.remarks.trim(),
         });
-        showSuccess(res.data?.message || 'Loan application REJECTED');
+        showSuccess(t('loanDetail.successReject'));
       } else if (activeActionModal === 'disburse') {
         if (!actionForm.disbursedAmount || Number(actionForm.disbursedAmount) <= 0) {
-          showError('Disbursed amount must be a positive number.');
+          showError(t('common.error'));
           setActionLoading(false);
           return;
         }
         const res = await loanAPI.disburseLoan(loan._id, {
           disbursedAmount: Number(actionForm.disbursedAmount),
         });
-        showSuccess(res.data?.message || 'Loan DISBURSED and Repayment Schedule generated!');
+        showSuccess(t('loanDetail.successDisburse'));
       }
 
       setActiveActionModal(null);
-      // Refetch complete loan state from backend to maintain single source of truth
       await fetchLoanData();
     } catch (err) {
-      const statusCode = err.response?.status;
-      let errMsg = err.response?.data?.message || 'Failed to process loan action';
-
-      if (statusCode === 400) {
-        errMsg = `Invalid State Transition (400): ${errMsg}`;
-      } else if (statusCode === 403) {
-        errMsg = `Forbidden (403): Admin authorization required.`;
-      } else if (statusCode === 409) {
-        errMsg = `Conflict (409): State conflict detected. Please refresh.`;
-      } else if (statusCode === 500) {
-        errMsg = `Server Error (500): ${errMsg}`;
-      }
-
-      showError(errMsg);
+      showError(err.response?.data?.message || t('common.error'));
     } finally {
       setActionLoading(false);
     }
@@ -172,7 +154,7 @@ const LoanDetail = () => {
   if (loading) {
     return (
       <div className="loan-detail-loading glass-panel">
-        <LoadingSpinner message="Fetching loan application file & verification documents..." />
+        <LoadingSpinner message={t('common.loading')} />
       </div>
     );
   }
@@ -180,9 +162,9 @@ const LoanDetail = () => {
   if (error || !loan) {
     return (
       <div className="loan-detail-error-container">
-        <ErrorState title="Loan Application Unavailable" message={error} onRetry={fetchLoanData} />
+        <ErrorState title={t('common.error')} message={error} onRetry={fetchLoanData} />
         <button onClick={() => navigate('/admin/loans')} className="btn btn-secondary mt-4">
-          <ArrowLeft size={16} /> Return to Loans Queue
+          <ArrowLeft size={16} /> {t('loanDetail.backToList')}
         </button>
       </div>
     );
@@ -194,20 +176,20 @@ const LoanDetail = () => {
   return (
     <div className="loan-detail-container">
       <PageHeader
-        title={`Loan Application #${loan._id.substring(0, 10)}`}
-        subtitle={`Submitted by ${farmer.name || 'Farmer'} on ${new Date(loan.createdAt).toLocaleDateString('en-IN')}`}
+        title={<div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><span>{t('loans.loanId')}:</span><LoanIdDisplay id={loan._id} format="full" showCopy={true} /></div>}
         breadcrumbsItems={[
-          { label: 'Admin Portal', path: '/admin' },
-          { label: 'Loan Applications', path: '/admin/loans' },
-          { label: `Loan #${loan._id.substring(0, 8)}`, path: `/admin/loans/${loan._id}`, isLast: true },
+          { label: t('nav.brandName'), path: '/admin' },
+          { label: t('nav.loanApplications'), path: '/admin/loans' },
+          { label: `#${loan._id.substring(0, 8)}`, path: `/admin/loans/${loan._id}`, isLast: true },
         ]}
+
         actions={
           <div className="detail-header-actions">
             <button onClick={() => navigate('/admin/loans')} className="btn btn-secondary">
               <ArrowLeft size={16} />
-              <span>Back to Queue</span>
+              <span>{t('loanDetail.backToList')}</span>
             </button>
-            <button onClick={fetchLoanData} className="btn btn-secondary" title="Refresh Application Data">
+            <button onClick={fetchLoanData} className="btn btn-secondary" title={t('common.refresh')}>
               <RefreshCw size={16} />
             </button>
           </div>
@@ -217,7 +199,7 @@ const LoanDetail = () => {
       {/* Top Banner Status & Workflow Action Bar */}
       <div className="status-banner-card glass-panel">
         <div className="banner-left">
-          <span className="banner-label">Lifecycle Status:</span>
+          <span className="banner-label">{t('common.status')}:</span>
           <StatusBadge status={loan.status} size="large" />
         </div>
 
@@ -230,7 +212,7 @@ const LoanDetail = () => {
               disabled={actionLoading}
             >
               <SearchCheck size={16} />
-              <span>Move to Under Review</span>
+              <span>{t('loans.underReview')}</span>
             </button>
           )}
 
@@ -242,7 +224,7 @@ const LoanDetail = () => {
                 disabled={actionLoading}
               >
                 <CheckCircle2 size={16} />
-                <span>Approve Loan</span>
+                <span>{t('common.approve')}</span>
               </button>
               <button
                 onClick={() => setActiveActionModal('reject')}
@@ -250,7 +232,7 @@ const LoanDetail = () => {
                 disabled={actionLoading}
               >
                 <XCircle size={16} />
-                <span>Reject Loan</span>
+                <span>{t('common.reject')}</span>
               </button>
             </>
           )}
@@ -262,14 +244,14 @@ const LoanDetail = () => {
               disabled={actionLoading}
             >
               <Banknote size={16} />
-              <span>Disburse Funds & Generate EMI</span>
+              <span>{t('common.disburse')}</span>
             </button>
           )}
 
           {status === 'DISBURSED' && (
             <button onClick={() => navigate(`/admin/repayments?loan=${loan._id}`)} className="btn repayment-btn">
               <CreditCard size={16} />
-              <span>View Repayments Module</span>
+              <span>{t('nav.repayments')}</span>
             </button>
           )}
         </div>
@@ -281,40 +263,40 @@ const LoanDetail = () => {
         <div className="detail-card glass-panel">
           <h3 className="card-section-title">
             <FileText size={18} className="text-emerald" />
-            <span>Financial & Application Specifications</span>
+            <span>{t('loanDetail.loanParameters')}</span>
           </h3>
 
           <div className="specs-grid">
             <div className="spec-item">
-              <span className="spec-label">Requested Amount</span>
+              <span className="spec-label">{t('loans.amount')}</span>
               <span className="spec-value highlight-currency">
                 ₹{loan.loanAmount?.toLocaleString('en-IN')}
               </span>
             </div>
 
             <div className="spec-item">
-              <span className="spec-label">Loan Purpose</span>
+              <span className="spec-label">{t('loans.purpose')}</span>
               <span className="spec-value">{loan.purpose}</span>
             </div>
 
             <div className="spec-item">
-              <span className="spec-label">Tenure Duration</span>
+              <span className="spec-label">{t('loans.tenure')}</span>
               <span className="spec-value">{loan.tenureMonths} Months</span>
             </div>
 
             <div className="spec-item">
-              <span className="spec-label">Annual Interest Rate</span>
-              <span className="spec-value">{loan.interestRate || 0}% p.a.</span>
+              <span className="spec-label">{t('loanDetail.interestRateLabel')}</span>
+              <span className="spec-value">{loan.interestRate || 0}%</span>
             </div>
 
             <div className="spec-item">
-              <span className="spec-label">Repayment Frequency</span>
+              <span className="spec-label">{t('repayments.paymentMethod')}</span>
               <span className="spec-value">{loan.repaymentFrequency || 'MONTHLY'}</span>
             </div>
 
             {loan.disbursedAmount > 0 && (
               <div className="spec-item">
-                <span className="spec-label">Disbursed Amount</span>
+                <span className="spec-label">{t('disbursement.disbursedAmount')}</span>
                 <span className="spec-value text-indigo">
                   ₹{loan.disbursedAmount?.toLocaleString('en-IN')}
                 </span>
@@ -323,9 +305,9 @@ const LoanDetail = () => {
 
             {loan.disbursedDate && (
               <div className="spec-item">
-                <span className="spec-label">Disbursement Date</span>
+                <span className="spec-label">{t('loanDetail.disbursedDate')}</span>
                 <span className="spec-value">
-                  {new Date(loan.disbursedDate).toLocaleDateString('en-IN')}
+                  {new Date(loan.disbursedDate).toLocaleDateString()}
                 </span>
               </div>
             )}
@@ -333,7 +315,7 @@ const LoanDetail = () => {
 
           {loan.remarks && (
             <div className="remarks-box">
-              <strong>Administrative Audit Remarks:</strong>
+              <strong>{t('common.remarks')}:</strong>
               <p>{loan.remarks}</p>
             </div>
           )}
@@ -343,7 +325,7 @@ const LoanDetail = () => {
         <div className="detail-card glass-panel">
           <h3 className="card-section-title">
             <User size={18} className="text-emerald" />
-            <span>Farmer Member Profile</span>
+            <span>{t('loanDetail.borrowerInfo')}</span>
           </h3>
 
           <div className="borrower-profile">
@@ -352,8 +334,8 @@ const LoanDetail = () => {
                 <User size={24} />
               </div>
               <div>
-                <h4 className="borrower-name">{farmer.name || 'Farmer Member'}</h4>
-                <span className="borrower-role">FARMER MEMBER</span>
+                <h4 className="borrower-name">{farmer.name || 'Farmer'}</h4>
+                <span className="borrower-role">{t('farmers.farmerName')}</span>
               </div>
             </div>
 
@@ -374,7 +356,7 @@ const LoanDetail = () => {
                 <MapPin size={15} className="info-icon" />
                 <span>
                   {[farmer.address?.village, farmer.address?.district, farmer.address?.state].filter(Boolean).join(', ') ||
-                    'Location not specified'}
+                    'N/A'}
                 </span>
               </div>
             </div>
@@ -387,37 +369,37 @@ const LoanDetail = () => {
         <div className="repayments-schedule-card glass-panel">
           <h3 className="card-section-title">
             <CreditCard size={18} className="text-indigo" />
-            <span>Generated Repayment Schedule ({repayments.length} Installments)</span>
+            <span>{t('loanDetail.repaymentSchedule')} ({repayments.length})</span>
           </h3>
 
           {repayments.length === 0 ? (
-            <p className="no-docs-text">Repayment schedule loading or empty...</p>
+            <p className="no-docs-text">{t('common.loading')}</p>
           ) : (
             <div className="repayments-table-wrapper">
               <table className="repayments-table">
                 <thead>
                   <tr>
-                    <th>Installment #</th>
-                    <th>Due Date</th>
-                    <th>Amount Due</th>
-                    <th>Amount Paid</th>
-                    <th>Status</th>
-                    <th>Payment Method</th>
-                    <th>Paid Date</th>
+                    <th>{t('repayments.installmentNo')}</th>
+                    <th>{t('repayments.dueDate')}</th>
+                    <th>{t('repayments.amountDue')}</th>
+                    <th>{t('repayments.amountPaid')}</th>
+                    <th>{t('repayments.paymentStatus')}</th>
+                    <th>{t('repayments.paymentMethod')}</th>
+                    <th>{t('repayments.paidDate')}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {repayments.map((r) => (
                     <tr key={r._id}>
-                      <td className="font-semibold">Installment #{r.installmentNumber}</td>
-                      <td>{new Date(r.dueDate).toLocaleDateString('en-IN')}</td>
+                      <td className="font-semibold">#{r.installmentNumber}</td>
+                      <td>{new Date(r.dueDate).toLocaleDateString()}</td>
                       <td className="font-semibold text-emerald">₹{r.amountDue?.toLocaleString('en-IN')}</td>
                       <td>₹{r.amountPaid?.toLocaleString('en-IN')}</td>
                       <td>
                         <StatusBadge status={r.paymentStatus} size="small" />
                       </td>
                       <td>{r.paymentMethod || '—'}</td>
-                      <td>{r.paidDate ? new Date(r.paidDate).toLocaleDateString('en-IN') : '—'}</td>
+                      <td>{r.paidDate ? new Date(r.paidDate).toLocaleDateString() : '—'}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -436,9 +418,9 @@ const LoanDetail = () => {
       <ConfirmDialog
         isOpen={activeActionModal === 'under-review'}
         type="info"
-        title="Move Application to UNDER REVIEW?"
-        message="Transition this loan application into UNDER REVIEW status for administrative evaluation?"
-        confirmText="Confirm Under Review"
+        title={t('loans.underReview')}
+        message={`#${loan._id.substring(0, 8)}`}
+        confirmText={t('common.confirm')}
         onConfirm={handleExecuteAction}
         onCancel={() => setActiveActionModal(null)}
         loading={actionLoading}
@@ -451,7 +433,7 @@ const LoanDetail = () => {
             <div className="modal-header">
               <div className="title-group">
                 <CheckCircle2 size={24} className="text-emerald" />
-                <h3>Approve Loan Application</h3>
+                <h3>{t('loanDetail.approveModalTitle')}</h3>
               </div>
               <button className="modal-close-btn" onClick={() => setActiveActionModal(null)} disabled={actionLoading}>
                 &times;
@@ -459,7 +441,7 @@ const LoanDetail = () => {
             </div>
             <div className="modal-body">
               <div className="form-group">
-                <label className="form-label">Interest Rate (% p.a.)</label>
+                <label className="form-label">{t('loanDetail.interestRateLabel')}</label>
                 <input
                   type="number"
                   min="0"
@@ -471,7 +453,7 @@ const LoanDetail = () => {
                 />
               </div>
               <div className="form-group">
-                <label className="form-label">Tenure Duration (Months)</label>
+                <label className="form-label">{t('loanDetail.tenureMonthsLabel')}</label>
                 <input
                   type="number"
                   min="1"
@@ -482,7 +464,7 @@ const LoanDetail = () => {
                 />
               </div>
               <div className="form-group">
-                <label className="form-label">Approval Remarks</label>
+                <label className="form-label">{t('common.remarks')}</label>
                 <textarea
                   className="form-textarea"
                   rows="3"
@@ -494,10 +476,10 @@ const LoanDetail = () => {
             </div>
             <div className="modal-footer">
               <button className="btn btn-secondary" onClick={() => setActiveActionModal(null)} disabled={actionLoading}>
-                Cancel
+                {t('common.cancel')}
               </button>
               <button className="btn approve-btn" onClick={handleExecuteAction} disabled={actionLoading}>
-                {actionLoading ? 'Approving...' : 'Confirm Approval'}
+                {actionLoading ? t('common.loading') : t('common.approve')}
               </button>
             </div>
           </div>
@@ -511,7 +493,7 @@ const LoanDetail = () => {
             <div className="modal-header">
               <div className="title-group">
                 <XCircle size={24} className="text-rose" />
-                <h3>Reject Loan Application</h3>
+                <h3>{t('loanDetail.rejectModalTitle')}</h3>
               </div>
               <button className="modal-close-btn" onClick={() => setActiveActionModal(null)} disabled={actionLoading}>
                 &times;
@@ -519,7 +501,7 @@ const LoanDetail = () => {
             </div>
             <div className="modal-body">
               <div className="form-group">
-                <label className="form-label">Rejection Remarks *</label>
+                <label className="form-label">{t('common.remarks')} *</label>
                 <textarea
                   className="form-textarea"
                   rows="3"
@@ -532,10 +514,10 @@ const LoanDetail = () => {
             </div>
             <div className="modal-footer">
               <button className="btn btn-secondary" onClick={() => setActiveActionModal(null)} disabled={actionLoading}>
-                Cancel
+                {t('common.cancel')}
               </button>
               <button className="btn reject-btn" onClick={handleExecuteAction} disabled={actionLoading}>
-                {actionLoading ? 'Rejecting...' : 'Confirm Rejection'}
+                {actionLoading ? t('common.loading') : t('common.reject')}
               </button>
             </div>
           </div>
@@ -549,7 +531,7 @@ const LoanDetail = () => {
             <div className="modal-header">
               <div className="title-group">
                 <Banknote size={24} className="text-indigo" />
-                <h3>Disburse Loan Funds</h3>
+                <h3>{t('loanDetail.disburseModalTitle')}</h3>
               </div>
               <button className="modal-close-btn" onClick={() => setActiveActionModal(null)} disabled={actionLoading}>
                 &times;
@@ -557,7 +539,7 @@ const LoanDetail = () => {
             </div>
             <div className="modal-body">
               <div className="form-group">
-                <label className="form-label">Disbursed Amount (₹)</label>
+                <label className="form-label">{t('disbursement.disbursedAmount')} (₹)</label>
                 <input
                   type="number"
                   min="1"
@@ -570,10 +552,10 @@ const LoanDetail = () => {
             </div>
             <div className="modal-footer">
               <button className="btn btn-secondary" onClick={() => setActiveActionModal(null)} disabled={actionLoading}>
-                Cancel
+                {t('common.cancel')}
               </button>
               <button className="btn disburse-btn" onClick={handleExecuteAction} disabled={actionLoading}>
-                {actionLoading ? 'Disbursing...' : 'Disburse Funds'}
+                {actionLoading ? t('common.loading') : t('common.disburse')}
               </button>
             </div>
           </div>

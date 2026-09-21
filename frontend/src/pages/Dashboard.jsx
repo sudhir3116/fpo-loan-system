@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Users,
   FileText,
@@ -30,10 +31,12 @@ import {
   LoadingSpinner,
   ErrorState,
   EmptyState,
+  LoanIdDisplay,
 } from '../components';
 import './Dashboard.css';
 
 const Dashboard = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
@@ -64,7 +67,7 @@ const Dashboard = () => {
         setDocuments(docsRes.value.data.data.documents || []);
       }
     } catch (err) {
-      setError(err.message || 'Failed to load administrative dashboard data');
+      setError(err.message || t('common.error'));
     } finally {
       setLoading(false);
     }
@@ -87,7 +90,6 @@ const Dashboard = () => {
     let totalRequestedCapital = 0;
     let totalDisbursedAmount = 0;
 
-    // Set of unique farmers
     const farmerSet = new Set();
 
     loans.forEach((loan) => {
@@ -152,48 +154,30 @@ const Dashboard = () => {
       .slice(0, 5);
   }, [loans]);
 
-  const recentApplications = useMemo(() => {
-    return [...loans]
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-      .slice(0, 5);
-  }, [loans]);
-
   const recentRepayments = useMemo(() => {
     return [...repayments]
       .sort((a, b) => new Date(b.updatedAt || b.dueDate) - new Date(a.updatedAt || a.dueDate))
       .slice(0, 5);
   }, [repayments]);
 
-  // Applications grouped by month (YYYY-MM)
-  const applicationsByMonth = useMemo(() => {
-    const map = new Map();
-    loans.forEach((loan) => {
-      const date = new Date(loan.createdAt);
-      const key = `${date.toLocaleString('default', { month: 'short' })} ${date.getFullYear()}`;
-      map.set(key, (map.get(key) || 0) + 1);
-    });
-    return Array.from(map.entries()).map(([month, count]) => ({ month, count }));
-  }, [loans]);
-
   return (
     <div className="dashboard-page-container">
       <PageHeader
-        title="Admin Overview Dashboard"
-        subtitle="Real-time FPO agricultural credit operations, portfolio metrics, and action items"
+        title={t('dashboard.title')}
         actions={
           <button onClick={fetchDashboardData} className="btn btn-secondary refresh-btn" disabled={loading}>
             <RefreshCw size={16} className={loading ? 'spinning' : ''} />
-            <span>Refresh Metrics</span>
+            <span>{t('common.refresh')}</span>
           </button>
         }
       />
 
       {loading ? (
         <div className="dashboard-loading-card glass-panel">
-          <LoadingSpinner message="Aggregating portfolio metrics and active loan queues from backend..." />
+          <LoadingSpinner message={t('common.loading')} />
         </div>
       ) : error ? (
-        <ErrorState title="Failed to Load Dashboard" message={error} onRetry={fetchDashboardData} />
+        <ErrorState title={t('common.error')} message={error} onRetry={fetchDashboardData} />
       ) : (
         <div className="dashboard-body">
           {/* Top Operational Metrics Summary Grid */}
@@ -201,14 +185,14 @@ const Dashboard = () => {
             {/* Total Farmers */}
             <div className="summary-card glass-panel" onClick={() => navigate('/admin/farmers')}>
               <div className="card-top">
-                <span className="card-title">Registered Farmers</span>
+                <span className="card-title">{t('dashboard.totalFarmers')}</span>
                 <div className="icon-box blue">
                   <Users size={18} />
                 </div>
               </div>
               <div className="card-value">{metrics.totalFarmers}</div>
               <div className="card-footer">
-                <span>View Farmer Registry</span>
+                <span>{t('dashboard.viewAllFarmers')}</span>
                 <ArrowRight size={13} />
               </div>
             </div>
@@ -216,14 +200,14 @@ const Dashboard = () => {
             {/* Total Applications */}
             <div className="summary-card glass-panel" onClick={() => navigate('/admin/loans')}>
               <div className="card-top">
-                <span className="card-title">Total Applications</span>
+                <span className="card-title">{t('loans.title')}</span>
                 <div className="icon-box indigo">
                   <FileText size={18} />
                 </div>
               </div>
               <div className="card-value">{metrics.totalApplications}</div>
               <div className="card-footer">
-                <span>Requested: ₹{metrics.totalRequestedCapital.toLocaleString('en-IN')}</span>
+                <span>₹{metrics.totalRequestedCapital.toLocaleString('en-IN')}</span>
                 <ArrowRight size={13} />
               </div>
             </div>
@@ -231,7 +215,7 @@ const Dashboard = () => {
             {/* Submitted & Under Review (Action Pending) */}
             <div className="summary-card glass-panel highlight-action" onClick={() => navigate('/admin/loans?status=UNDER_REVIEW')}>
               <div className="card-top">
-                <span className="card-title">Pending Decision</span>
+                <span className="card-title">{t('dashboard.pendingReview')}</span>
                 <div className="icon-box amber">
                   <Clock size={18} />
                 </div>
@@ -240,7 +224,7 @@ const Dashboard = () => {
                 {metrics.countSubmitted + metrics.countUnderReview}
               </div>
               <div className="card-footer">
-                <span>{metrics.countSubmitted} Submitted | {metrics.countUnderReview} Under Review</span>
+                <span>{metrics.countSubmitted} {t('status.submitted')} | {metrics.countUnderReview} {t('status.underReview')}</span>
                 <ArrowRight size={13} />
               </div>
             </div>
@@ -248,14 +232,14 @@ const Dashboard = () => {
             {/* Approved (Awaiting Disbursement) */}
             <div className="summary-card glass-panel" onClick={() => navigate('/admin/loans?status=APPROVED')}>
               <div className="card-top">
-                <span className="card-title">Approved (Ready)</span>
+                <span className="card-title">{t('status.approved')}</span>
                 <div className="icon-box emerald">
                   <CheckCircle2 size={18} />
                 </div>
               </div>
               <div className="card-value text-emerald">{metrics.countApproved}</div>
               <div className="card-footer">
-                <span>Awaiting Capital Disbursement</span>
+                <span>{t('disbursement.pendingDisbursement')}</span>
                 <ArrowRight size={13} />
               </div>
             </div>
@@ -263,14 +247,14 @@ const Dashboard = () => {
             {/* Disbursed Portfolio Capital */}
             <div className="summary-card glass-panel" onClick={() => navigate('/admin/loans?status=DISBURSED')}>
               <div className="card-top">
-                <span className="card-title">Disbursed Portfolio</span>
+                <span className="card-title">{t('dashboard.totalDisbursed')}</span>
                 <div className="icon-box cyan">
                   <Banknote size={18} />
                 </div>
               </div>
               <div className="card-value">₹{metrics.totalDisbursedAmount.toLocaleString('en-IN')}</div>
               <div className="card-footer">
-                <span>{metrics.countDisbursed} Active | {metrics.countClosed} Closed</span>
+                <span>{metrics.countDisbursed} {t('status.disbursed')} | {metrics.countClosed} {t('status.closed')}</span>
                 <ArrowRight size={13} />
               </div>
             </div>
@@ -278,14 +262,14 @@ const Dashboard = () => {
             {/* Total Repaid Collections */}
             <div className="summary-card glass-panel" onClick={() => navigate('/admin/repayments')}>
               <div className="card-top">
-                <span className="card-title">Total Collections Repaid</span>
+                <span className="card-title">{t('reports.totalCollected')}</span>
                 <div className="icon-box emerald">
                   <TrendingUp size={18} />
                 </div>
               </div>
               <div className="card-value text-emerald">₹{metrics.totalRepaid.toLocaleString('en-IN')}</div>
               <div className="card-footer">
-                <span>View Repayments Schedule</span>
+                <span>{t('dashboard.viewAllRepayments')}</span>
                 <ArrowRight size={13} />
               </div>
             </div>
@@ -293,14 +277,14 @@ const Dashboard = () => {
             {/* Outstanding Balance */}
             <div className="summary-card glass-panel" onClick={() => navigate('/admin/repayments')}>
               <div className="card-top">
-                <span className="card-title">Outstanding Balance</span>
+                <span className="card-title">{t('reports.outstandingBalance')}</span>
                 <div className="icon-box purple">
                   <CreditCard size={18} />
                 </div>
               </div>
               <div className="card-value text-purple">₹{metrics.outstandingAmount.toLocaleString('en-IN')}</div>
               <div className="card-footer">
-                <span>Principal Pending Collection</span>
+                <span>{t('reports.outstandingBalance')}</span>
                 <ArrowRight size={13} />
               </div>
             </div>
@@ -308,14 +292,14 @@ const Dashboard = () => {
             {/* Overdue Risk */}
             <div className="summary-card glass-panel highlight-danger" onClick={() => navigate('/admin/repayments?status=OVERDUE')}>
               <div className="card-top">
-                <span className="card-title">Overdue Installments</span>
+                <span className="card-title">{t('dashboard.overdueAmount')}</span>
                 <div className="icon-box rose">
                   <AlertTriangle size={18} />
                 </div>
               </div>
               <div className="card-value text-rose">{metrics.overdueCount}</div>
               <div className="card-footer">
-                <span>Risk Exposure: ₹{metrics.overdueAmount.toLocaleString('en-IN')}</span>
+                <span>₹{metrics.overdueAmount.toLocaleString('en-IN')}</span>
                 <ArrowRight size={13} />
               </div>
             </div>
@@ -327,12 +311,12 @@ const Dashboard = () => {
             <div className="dashboard-chart-card glass-panel">
               <div className="chart-header">
                 <BarChart3 size={18} className="text-primary" />
-                <h3>Loan Application Pipeline</h3>
+                <h3>{t('dashboard.statusDistribution')}</h3>
               </div>
               <div className="status-bars-container">
                 <div className="status-bar-row">
                   <div className="bar-label-group">
-                    <span>Submitted ({metrics.countSubmitted})</span>
+                    <span>{t('status.submitted')} ({metrics.countSubmitted})</span>
                     <span>{metrics.totalApplications > 0 ? Math.round((metrics.countSubmitted / metrics.totalApplications) * 100) : 0}%</span>
                   </div>
                   <div className="bar-track">
@@ -345,7 +329,7 @@ const Dashboard = () => {
 
                 <div className="status-bar-row">
                   <div className="bar-label-group">
-                    <span>Under Review ({metrics.countUnderReview})</span>
+                    <span>{t('status.underReview')} ({metrics.countUnderReview})</span>
                     <span>{metrics.totalApplications > 0 ? Math.round((metrics.countUnderReview / metrics.totalApplications) * 100) : 0}%</span>
                   </div>
                   <div className="bar-track">
@@ -358,7 +342,7 @@ const Dashboard = () => {
 
                 <div className="status-bar-row">
                   <div className="bar-label-group">
-                    <span>Approved ({metrics.countApproved})</span>
+                    <span>{t('status.approved')} ({metrics.countApproved})</span>
                     <span>{metrics.totalApplications > 0 ? Math.round((metrics.countApproved / metrics.totalApplications) * 100) : 0}%</span>
                   </div>
                   <div className="bar-track">
@@ -371,7 +355,7 @@ const Dashboard = () => {
 
                 <div className="status-bar-row">
                   <div className="bar-label-group">
-                    <span>Disbursed ({metrics.countDisbursed})</span>
+                    <span>{t('status.disbursed')} ({metrics.countDisbursed})</span>
                     <span>{metrics.totalApplications > 0 ? Math.round((metrics.countDisbursed / metrics.totalApplications) * 100) : 0}%</span>
                   </div>
                   <div className="bar-track">
@@ -384,7 +368,7 @@ const Dashboard = () => {
 
                 <div className="status-bar-row">
                   <div className="bar-label-group">
-                    <span>Closed / Paid ({metrics.countClosed})</span>
+                    <span>{t('status.closed')} ({metrics.countClosed})</span>
                     <span>{metrics.totalApplications > 0 ? Math.round((metrics.countClosed / metrics.totalApplications) * 100) : 0}%</span>
                   </div>
                   <div className="bar-track">
@@ -397,7 +381,7 @@ const Dashboard = () => {
 
                 <div className="status-bar-row">
                   <div className="bar-label-group">
-                    <span>Rejected ({metrics.countRejected})</span>
+                    <span>{t('status.rejected')} ({metrics.countRejected})</span>
                     <span>{metrics.totalApplications > 0 ? Math.round((metrics.countRejected / metrics.totalApplications) * 100) : 0}%</span>
                   </div>
                   <div className="bar-track">
@@ -414,7 +398,7 @@ const Dashboard = () => {
             <div className="dashboard-chart-card glass-panel">
               <div className="chart-header">
                 <PieChart size={18} className="text-emerald" />
-                <h3>Capital Recovery Ratio</h3>
+                <h3>{t('dashboard.recoveryRate')}</h3>
               </div>
               <div className="capital-meter-wrapper">
                 <div className="meter-ring">
@@ -423,20 +407,20 @@ const Dashboard = () => {
                       ? `${Math.min(100, Math.round((metrics.totalRepaid / metrics.totalDisbursedAmount) * 100))}%`
                       : '100%'}
                   </span>
-                  <span className="meter-lbl">Recovered</span>
+                  <span className="meter-lbl">{t('status.paid')}</span>
                 </div>
                 <div className="meter-breakdown">
                   <div className="breakdown-item">
                     <span className="dot emerald" />
-                    <span>Repaid Collections: <strong>₹{metrics.totalRepaid.toLocaleString('en-IN')}</strong></span>
+                    <span>{t('reports.totalCollected')}: <strong>₹{metrics.totalRepaid.toLocaleString('en-IN')}</strong></span>
                   </div>
                   <div className="breakdown-item">
                     <span className="dot purple" />
-                    <span>Outstanding Balance: <strong>₹{metrics.outstandingAmount.toLocaleString('en-IN')}</strong></span>
+                    <span>{t('reports.outstandingBalance')}: <strong>₹{metrics.outstandingAmount.toLocaleString('en-IN')}</strong></span>
                   </div>
                   <div className="breakdown-item">
                     <span className="dot rose" />
-                    <span>Overdue Exposure: <strong>₹{metrics.overdueAmount.toLocaleString('en-IN')}</strong></span>
+                    <span>{t('dashboard.overdueAmount')}: <strong>₹{metrics.overdueAmount.toLocaleString('en-IN')}</strong></span>
                   </div>
                 </div>
               </div>
@@ -450,19 +434,19 @@ const Dashboard = () => {
               <div className="queue-header">
                 <div className="queue-title-group">
                   <Clock size={18} className="text-amber" />
-                  <h3>Applications Requiring Attention ({applicationsRequiringAttention.length})</h3>
+                  <h3>{t('dashboard.recentApplications')} ({applicationsRequiringAttention.length})</h3>
                 </div>
                 <button
                   className="queue-view-all"
                   onClick={() => navigate('/admin/loans?status=UNDER_REVIEW')}
                 >
-                  <span>View All</span>
+                  <span>{t('common.view')}</span>
                   <ArrowRight size={13} />
                 </button>
               </div>
 
               {applicationsRequiringAttention.length === 0 ? (
-                <EmptyState title="No Action Items Pending" description="All submitted loan applications have been evaluated." />
+                <EmptyState title={t('empty.noData')} description={t('empty.tryAdjusting')} />
               ) : (
                 <div className="queue-list">
                   {applicationsRequiringAttention.map((loan) => (
@@ -472,14 +456,15 @@ const Dashboard = () => {
                       onClick={() => navigate(`/admin/loans/${loan._id}`)}
                     >
                       <div className="queue-item-left">
-                        <span className="queue-id">#{loan._id.substring(0, 8)}...</span>
-                        <div className="queue-farmer">{loan.farmer?.name || 'Farmer'}</div>
+                        <LoanIdDisplay id={loan._id} format="short" showCopy={true} />
+                        <div className="queue-farmer">{loan.farmer?.name || t('loans.farmer')}</div>
                         <div className="queue-subtext">₹{loan.loanAmount?.toLocaleString('en-IN')} • {loan.purpose}</div>
                       </div>
 
+
                       <div className="queue-item-right">
                         <StatusBadge status={loan.status} size="small" />
-                        <button className="btn btn-secondary action-icon-btn" title="View Application">
+                        <button className="btn btn-secondary action-icon-btn" title={t('common.view')}>
                           <Eye size={13} />
                         </button>
                       </div>
@@ -494,16 +479,16 @@ const Dashboard = () => {
               <div className="queue-header">
                 <div className="queue-title-group">
                   <CreditCard size={18} className="text-emerald" />
-                  <h3>Recent Repayment Activity</h3>
+                  <h3>{t('dashboard.repaymentTrend')}</h3>
                 </div>
                 <button className="queue-view-all" onClick={() => navigate('/admin/repayments')}>
-                  <span>View All</span>
+                  <span>{t('common.view')}</span>
                   <ArrowRight size={13} />
                 </button>
               </div>
 
               {recentRepayments.length === 0 ? (
-                <EmptyState title="No Repayment Activity" description="No repayment installments recorded yet." />
+                <EmptyState title={t('empty.noData')} description={t('empty.tryAdjusting')} />
               ) : (
                 <div className="queue-list">
                   {recentRepayments.map((repay) => (
@@ -513,16 +498,16 @@ const Dashboard = () => {
                       onClick={() => navigate('/admin/repayments')}
                     >
                       <div className="queue-item-left">
-                        <span className="queue-id">Installment #{repay.installmentNumber}</span>
-                        <div className="queue-farmer">{repay.borrower?.name || 'Borrower'}</div>
+                        <span className="queue-id">{t('repayments.installmentNo')} #{repay.installmentNumber}</span>
+                        <div className="queue-farmer">{repay.borrower?.name || t('repayments.borrower')}</div>
                         <div className="queue-subtext">
-                          Paid: ₹{repay.amountPaid?.toLocaleString('en-IN')} / Due: ₹{repay.amountDue?.toLocaleString('en-IN')}
+                          {t('repayments.amountPaid')}: ₹{repay.amountPaid?.toLocaleString('en-IN')} / {t('repayments.amountDue')}: ₹{repay.amountDue?.toLocaleString('en-IN')}
                         </div>
                       </div>
 
                       <div className="queue-item-right">
                         <StatusBadge status={repay.paymentStatus} size="small" />
-                        <span className="queue-date">{new Date(repay.dueDate).toLocaleDateString('en-IN')}</span>
+                        <span className="queue-date">{new Date(repay.dueDate).toLocaleDateString()}</span>
                       </div>
                     </div>
                   ))}

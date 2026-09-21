@@ -1,37 +1,57 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { authAPI } from '../api/client';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { authAPI, getActiveToken } from '../api/client';
+
+export const AUTH_STATES = {
+  INITIALIZING: 'INITIALIZING',
+  AUTHENTICATED: 'AUTHENTICATED',
+  UNAUTHENTICATED: 'UNAUTHENTICATED',
+};
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(() => {
-    try {
-      const savedUser = localStorage.getItem('fpo_admin_user');
-      return savedUser ? JSON.parse(savedUser) : null;
-    } catch {
-      return null;
-    }
-  });
-
-  const [token, setToken] = useState(() => localStorage.getItem('fpo_admin_token') || null);
+  const [authState, setAuthState] = useState(AUTH_STATES.INITIALIZING);
+  const [user, setUser] = useState(null);
+  const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [initializing, setInitializing] = useState(true);
   const [error, setError] = useState(null);
 
-  const logout = () => {
+  const clearAllStoredSessions = () => {
+    // Clear active tab session
+    sessionStorage.removeItem('fpo_active_token');
+    sessionStorage.removeItem('fpo_active_user');
+    sessionStorage.removeItem('fpo_token');
+    sessionStorage.removeItem('fpo_user');
+
+    // Clear any residual localStorage tokens to prevent startup bypass
+    localStorage.removeItem('fpo_admin_token');
+    localStorage.removeItem('fpo_admin_user');
+    localStorage.removeItem('fpo_farmer_token');
+    localStorage.removeItem('fpo_farmer_user');
+    localStorage.removeItem('fpo_token');
+  };
+
+  const logout = useCallback(() => {
     setUser(null);
     setToken(null);
     setError(null);
-    localStorage.removeItem('fpo_admin_user');
-    localStorage.removeItem('fpo_admin_token');
-  };
+    setAuthState(AUTH_STATES.UNAUTHENTICATED);
+    clearAllStoredSessions();
+  }, []);
 
-  // Verify stored token & session on initial page load / refresh
+  // Session verification on initial load and refresh
   useEffect(() => {
+    let isMounted = true;
+
     const verifySession = async () => {
-      const storedToken = localStorage.getItem('fpo_admin_token');
-      if (!storedToken) {
-        setInitializing(false);
+      const activeToken = getActiveToken();
+
+      if (!activeToken) {
+        if (isMounted) {
+          setUser(null);
+          setToken(null);
+          setAuthState(AUTH_STATES.UNAUTHENTICATED);
+        }
         return;
       }
 
@@ -39,23 +59,38 @@ export const AuthProvider = ({ children }) => {
         const response = await authAPI.getMe();
         const currentUser = response.data?.data?.user;
 
-        if (currentUser && (currentUser.role === 'FPO_ADMIN' || currentUser.role === 'FARMER') && currentUser.status === 'ACTIVE') {
+        if (
+          isMounted &&
+          currentUser &&
+          (currentUser.role === 'FPO_ADMIN' || currentUser.role === 'FARMER') &&
+          currentUser.status === 'ACTIVE'
+        ) {
+          // Verified successfully by backend
           setUser(currentUser);
-          localStorage.setItem('fpo_admin_user', JSON.stringify(currentUser));
+          setToken(activeToken);
+          setAuthState(AUTH_STATES.AUTHENTICATED);
+
+          // Save tab session
+          sessionStorage.setItem('fpo_active_token', activeToken);
+          sessionStorage.setItem('fpo_active_user', JSON.stringify(currentUser));
         } else {
-          // Account status invalid or unauthorized role
-          logout();
+          // Invalid status or role
+          if (isMounted) logout();
         }
       } catch (err) {
-        console.warn('Session verification failed on refresh:', err.response?.data?.message || err.message);
-        logout();
-      } finally {
-        setInitializing(false);
+        console.warn('Session verification failed on startup/refresh:', err.response?.data?.message || err.message);
+        if (isMounted) {
+          logout();
+        }
       }
     };
 
     verifySession();
-  }, []);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [logout]);
 
   // Listen for global auto-logout events emitted by Axios 401 interceptor
   useEffect(() => {
@@ -65,7 +100,7 @@ export const AuthProvider = ({ children }) => {
 
     window.addEventListener('fpo_auth_logout', handleAutoLogout);
     return () => window.removeEventListener('fpo_auth_logout', handleAutoLogout);
-  }, []);
+  }, [logout]);
 
   const login = async (email, password) => {
     setLoading(true);
@@ -80,6 +115,7 @@ export const AuthProvider = ({ children }) => {
         const errMsg = 'Login failed. User profile data missing.';
         setError(errMsg);
         setLoading(false);
+        setAuthState(AUTH_STATES.UNAUTHENTICATED);
         return { success: false, message: errMsg };
       }
 
@@ -88,13 +124,17 @@ export const AuthProvider = ({ children }) => {
         const errMsg = 'Access Denied: Account is inactive or suspended.';
         setError(errMsg);
         setLoading(false);
+        setAuthState(AUTH_STATES.UNAUTHENTICATED);
         return { success: false, message: errMsg };
       }
 
       setToken(jwtToken);
       setUser(loggedUser);
-      localStorage.setItem('fpo_admin_token', jwtToken);
-      localStorage.setItem('fpo_admin_user', JSON.stringify(loggedUser));
+      setAuthState(AUTH_STATES.AUTHENTICATED);
+
+      // Save tab-isolated session
+      sessionStorage.setItem('fpo_active_token', jwtToken);
+      sessionStorage.setItem('fpo_active_user', JSON.stringify(loggedUser));
 
       setLoading(false);
       return { success: true, user: loggedUser };
@@ -102,6 +142,7 @@ export const AuthProvider = ({ children }) => {
       const message = err.response?.data?.message || 'Login failed. Please check your credentials and try again.';
       setError(message);
       setLoading(false);
+      setAuthState(AUTH_STATES.UNAUTHENTICATED);
       return { success: false, message };
     }
   };
@@ -119,6 +160,7 @@ export const AuthProvider = ({ children }) => {
         const errMsg = 'Google authentication failed. User profile data missing.';
         setError(errMsg);
         setLoading(false);
+        setAuthState(AUTH_STATES.UNAUTHENTICATED);
         return { success: false, message: errMsg };
       }
 
@@ -127,13 +169,17 @@ export const AuthProvider = ({ children }) => {
         const errMsg = 'Access Denied: Account is inactive or suspended.';
         setError(errMsg);
         setLoading(false);
+        setAuthState(AUTH_STATES.UNAUTHENTICATED);
         return { success: false, message: errMsg };
       }
 
       setToken(jwtToken);
       setUser(loggedUser);
-      localStorage.setItem('fpo_admin_token', jwtToken);
-      localStorage.setItem('fpo_admin_user', JSON.stringify(loggedUser));
+      setAuthState(AUTH_STATES.AUTHENTICATED);
+
+      // Save tab-isolated session
+      sessionStorage.setItem('fpo_active_token', jwtToken);
+      sessionStorage.setItem('fpo_active_user', JSON.stringify(loggedUser));
 
       setLoading(false);
       return { success: true, user: loggedUser };
@@ -141,17 +187,21 @@ export const AuthProvider = ({ children }) => {
       const message = err.response?.data?.message || 'Google authentication failed. Please try again.';
       setError(message);
       setLoading(false);
+      setAuthState(AUTH_STATES.UNAUTHENTICATED);
       return { success: false, message };
     }
   };
 
-  const isAuthenticated = !!token && !!user;
+  const initializing = authState === AUTH_STATES.INITIALIZING;
+  const isAuthenticated = authState === AUTH_STATES.AUTHENTICATED;
   const isAdmin = isAuthenticated && user?.role === 'FPO_ADMIN';
   const isFarmer = isAuthenticated && user?.role === 'FARMER';
 
   return (
     <AuthContext.Provider
       value={{
+        authState,
+        AUTH_STATES,
         user,
         token,
         loading,

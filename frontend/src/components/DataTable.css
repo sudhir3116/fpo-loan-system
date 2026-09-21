@@ -3,6 +3,7 @@
   overflow: hidden;
   border: 1px solid var(--border-color);
   background: var(--bg-card);
+  transition: background-color var(--transition-normal), border-color var(--transition-normal);
 }
 
 .table-responsive-wrapper {
@@ -19,7 +20,7 @@
 }
 
 .custom-data-table th {
-  background: rgba(15, 23, 42, 0.6);
+  background: var(--bg-table-header);
   color: var(--text-muted);
   font-weight: 600;
   font-size: 0.785rem;
@@ -32,12 +33,12 @@
 
 .sortable-header {
   cursor: pointer;
-  transition: color 0.2s ease;
+  transition: color 0.2s ease, background-color 0.2s ease;
 }
 
 .sortable-header:hover {
   color: var(--text-main);
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--bg-table-row-hover);
 }
 
 .header-cell-content {
@@ -51,7 +52,7 @@
 }
 
 .active-sort {
-  color: var(--accent-primary);
+  color: var(--primary);
 }
 
 .inactive-sort {
@@ -59,7 +60,7 @@
 }
 
 .custom-data-table td {
-  padding: 1rem 1.15rem;
+  padding: 0.85rem 1.15rem;
   border-bottom: 1px solid var(--border-color);
   color: var(--text-main);
   vertical-align: middle;
@@ -74,7 +75,7 @@
 }
 
 .custom-data-table tbody tr:hover {
-  background-color: rgba(255, 255, 255, 0.025);
+  background-color: var(--bg-table-row-hover);
 }
 
 .clickable-row {

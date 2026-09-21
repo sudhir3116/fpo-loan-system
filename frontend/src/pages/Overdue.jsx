@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   AlertTriangle,
   Search,
@@ -17,6 +18,7 @@ import {
   LoadingSpinner,
   ErrorState,
   EmptyState,
+  LoanIdDisplay,
   useToast,
 } from '../components';
 import './Overdue.css';
@@ -33,27 +35,27 @@ const daysOverdue = (dueDate) => {
   return Math.max(0, diff);
 };
 
-const FILTER_TABS = [
-  { key: 'ALL',     label: 'All', icon: BarChart2 },
-  { key: 'OVERDUE', label: 'Overdue', icon: AlertCircle },
-  { key: 'PARTIAL', label: 'Partial', icon: AlertTriangle },
-  { key: 'PENDING', label: 'Pending', icon: Clock },
-];
-
 const Overdue = () => {
+  const { t } = useTranslation();
   const { showError } = useToast();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [repayments, setRepayments] = useState([]);
-  const [statusFilter, setStatusFilter] = useState('OVERDUE'); // default to overdue
+  const [statusFilter, setStatusFilter] = useState('OVERDUE');
   const [searchTerm, setSearchTerm] = useState('');
+
+  const FILTER_TABS = [
+    { key: 'ALL',     label: t('common.all'), icon: BarChart2 },
+    { key: 'OVERDUE', label: t('status.overdue'), icon: AlertCircle },
+    { key: 'PARTIAL', label: t('status.partial'), icon: AlertTriangle },
+    { key: 'PENDING', label: t('status.pending'), icon: Clock },
+  ];
 
   const fetchRepayments = async () => {
     setLoading(true);
     setError(null);
     try {
-      // Fetch all non-PAID repayments
       const responses = await Promise.all([
         repaymentAPI.getAllRepayments({ paymentStatus: 'OVERDUE', limit: 200 }),
         repaymentAPI.getAllRepayments({ paymentStatus: 'PARTIAL', limit: 200 }),
@@ -64,7 +66,6 @@ const Overdue = () => {
         (r) => (r.data?.status === 'success' ? r.data.data?.repayments || [] : [])
       );
 
-      // Deduplicate by _id
       const seen = new Set();
       const unique = combined.filter((r) => {
         if (seen.has(r._id)) return false;
@@ -72,7 +73,6 @@ const Overdue = () => {
         return true;
       });
 
-      // Sort: OVERDUE first, then PARTIAL, then PENDING, then by dueDate
       const order = { OVERDUE: 0, PARTIAL: 1, PENDING: 2 };
       unique.sort((a, b) => {
         const statusDiff = (order[a.paymentStatus] ?? 3) - (order[b.paymentStatus] ?? 3);
@@ -82,7 +82,7 @@ const Overdue = () => {
 
       setRepayments(unique);
     } catch (err) {
-      const msg = err.response?.data?.message || 'Failed to load repayment data';
+      const msg = err.response?.data?.message || t('overdue.loadingRepaymentData');
       setError(msg);
       showError(msg);
     } finally {
@@ -94,7 +94,6 @@ const Overdue = () => {
     fetchRepayments();
   }, []);
 
-  // Summary from full dataset
   const summary = useMemo(() => ({
     overdueCount:  repayments.filter((r) => r.paymentStatus === 'OVERDUE').length,
     overdueAmount: repayments.filter((r) => r.paymentStatus === 'OVERDUE').reduce((s, r) => s + (r.amountDue - r.amountPaid), 0),
@@ -102,7 +101,6 @@ const Overdue = () => {
     pendingCount:  repayments.filter((r) => r.paymentStatus === 'PENDING').length,
   }), [repayments]);
 
-  // Filtered + searched list
   const filtered = useMemo(() => {
     let list = repayments;
     if (statusFilter !== 'ALL') {
@@ -131,43 +129,42 @@ const Overdue = () => {
   return (
     <div className="overdue-page-container">
       <PageHeader
-        title="Overdue / Defaulters"
-        subtitle="Monitor repayment installments that require attention"
+        title={t('overdue.title')}
       />
 
       {/* Summary Cards */}
       <div className="metrics-overview-grid">
         <div className="metric-card">
           <div className="metric-header">
-            <span className="metric-title">Overdue Installments</span>
+            <span className="metric-title">{t('overdue.overdueInstallments')}</span>
             <div className="metric-icon-box rose"><AlertCircle size={18} /></div>
           </div>
           <div className="metric-main-value">{summary.overdueCount}</div>
-          <div className="metric-footer-text">Past due with no payment</div>
+          <div className="metric-footer-text">{t('overdue.pastDueNoPayment')}</div>
         </div>
         <div className="metric-card">
           <div className="metric-header">
-            <span className="metric-title">Total Overdue Amount</span>
+            <span className="metric-title">{t('overdue.totalOverdueAmount')}</span>
             <div className="metric-icon-box rose"><IndianRupee size={18} /></div>
           </div>
           <div className="metric-main-value overdue-amount-val">{fmt(summary.overdueAmount)}</div>
-          <div className="metric-footer-text">Outstanding on overdue installments</div>
+          <div className="metric-footer-text">{t('overdue.outstandingOverdue')}</div>
         </div>
         <div className="metric-card">
           <div className="metric-header">
-            <span className="metric-title">Partial Payments</span>
+            <span className="metric-title">{t('overdue.partialPayments')}</span>
             <div className="metric-icon-box amber"><AlertTriangle size={18} /></div>
           </div>
           <div className="metric-main-value">{summary.partialCount}</div>
-          <div className="metric-footer-text">Installments partly paid</div>
+          <div className="metric-footer-text">{t('overdue.installmentsPartlyPaid')}</div>
         </div>
         <div className="metric-card">
           <div className="metric-header">
-            <span className="metric-title">Pending Payments</span>
+            <span className="metric-title">{t('overdue.pendingPayments')}</span>
             <div className="metric-icon-box blue"><Clock size={18} /></div>
           </div>
           <div className="metric-main-value">{summary.pendingCount}</div>
-          <div className="metric-footer-text">Not yet due or unpaid</div>
+          <div className="metric-footer-text">{t('overdue.notYetDue')}</div>
         </div>
       </div>
 
@@ -192,7 +189,7 @@ const Overdue = () => {
             <input
               type="text"
               className="search-input"
-              placeholder="Search farmer, loan, purpose..."
+              placeholder={t('overdue.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -203,7 +200,7 @@ const Overdue = () => {
             disabled={loading}
           >
             <RefreshCw size={15} className={loading ? 'spinning' : ''} />
-            <span>Refresh</span>
+            <span>{t('common.refresh')}</span>
           </button>
         </div>
       </div>
@@ -211,23 +208,23 @@ const Overdue = () => {
       {/* Content */}
       {loading ? (
         <div className="overdue-loader-wrap">
-          <LoadingSpinner message="Loading repayment data..." />
+          <LoadingSpinner message={t('overdue.loadingRepaymentData')} />
         </div>
       ) : error ? (
         <ErrorState message={error} onRetry={fetchRepayments} />
       ) : filtered.length === 0 ? (
         <EmptyState
-          icon={<AlertTriangle size={40} />}
-          title={statusFilter === 'ALL' ? 'No overdue or pending installments' : `No ${statusFilter.toLowerCase()} installments`}
-          message={statusFilter === 'OVERDUE'
-            ? 'All loans are being repaid on time. Great health!'
-            : 'No installments match the current filter.'}
+          icon={AlertTriangle}
+          title={statusFilter === 'ALL' ? t('overdue.noOverdueOrPending') : t('overdue.noStatusInstallments', { status: statusFilter.toLowerCase() })}
+          description={statusFilter === 'OVERDUE'
+            ? t('overdue.allLoansOnTime')
+            : t('empty.tryAdjusting')}
         />
       ) : (
         <div className="glass-panel overdue-table-panel">
           <div className="overdue-table-header">
             <span className="overdue-results-count">
-              {filtered.length} installment{filtered.length !== 1 ? 's' : ''} found
+              {t('overdue.installmentsFound', { count: filtered.length })}
             </span>
             {statusFilter !== 'ALL' && (
               <StatusBadge status={statusFilter} size="small" />
@@ -237,15 +234,15 @@ const Overdue = () => {
             <table className="overdue-table">
               <thead>
                 <tr>
-                  <th>Farmer</th>
-                  <th>Loan / Purpose</th>
-                  <th>Installment #</th>
-                  <th>Due Date</th>
-                  <th>Amount Due</th>
-                  <th>Amount Paid</th>
-                  <th>Outstanding</th>
-                  <th>Status</th>
-                  <th>Days Overdue</th>
+                  <th>{t('disbursement.thFarmer')}</th>
+                  <th>{t('loans.purpose')}</th>
+                  <th>{t('repayments.installment')} #</th>
+                  <th>{t('repayments.dueDate')}</th>
+                  <th>{t('repayments.amountDue')}</th>
+                  <th>{t('repayments.amountPaid')}</th>
+                  <th>{t('repayments.remaining')}</th>
+                  <th>{t('repayments.paymentStatus')}</th>
+                  <th>{t('overdue.daysOverdue')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -269,7 +266,7 @@ const Overdue = () => {
                       {/* Loan */}
                       <td>
                         <div className="loan-ref-cell">
-                          <span className="loan-ref-id">#{r.loan?._id?.slice(-8).toUpperCase() || '—'}</span>
+                          <LoanIdDisplay id={r.loan?._id} format="short" showCopy={true} />
                           <span className="loan-ref-purpose">{r.loan?.purpose || ''}</span>
                         </div>
                       </td>
@@ -306,7 +303,7 @@ const Overdue = () => {
                       {/* Days Overdue */}
                       <td>
                         {days !== null ? (
-                          <span className="days-overdue-badge">{days}d</span>
+                          <span className="days-overdue-badge">{t('overdue.daysOverdueBadge', { days })}</span>
                         ) : (
                           <span className="text-dim">—</span>
                         )}

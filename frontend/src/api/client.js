@@ -9,10 +9,17 @@ const apiClient = axios.create({
   },
 });
 
+// Helper to resolve the correct authentication token across tabs and roles
+// Strict tab session isolation: Prevents stale localStorage tokens from bypassing login on startup
+export const getActiveToken = () => {
+  if (typeof window === 'undefined') return null;
+  return sessionStorage.getItem('fpo_active_token') || sessionStorage.getItem('fpo_token') || null;
+};
+
 // Request Interceptor: Attach JWT Bearer Token if present
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('fpo_admin_token');
+    const token = getActiveToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -29,9 +36,20 @@ apiClient.interceptors.response.use(
       const { status, data } = error.response;
       if (status === 401) {
         console.warn('Authentication error or token expired:', data?.message);
-        localStorage.removeItem('fpo_admin_token');
-        localStorage.removeItem('fpo_admin_user');
-        // Dispatch custom event so AuthContext can update state
+        // Clear active session storage
+        sessionStorage.removeItem('fpo_active_token');
+        sessionStorage.removeItem('fpo_active_user');
+
+        const isFarmer = typeof window !== 'undefined' && window.location.pathname.startsWith('/farmer');
+        if (isFarmer) {
+          localStorage.removeItem('fpo_farmer_token');
+          localStorage.removeItem('fpo_farmer_user');
+        } else {
+          localStorage.removeItem('fpo_admin_token');
+          localStorage.removeItem('fpo_admin_user');
+        }
+
+        // Dispatch custom event so AuthContext can synchronize state
         window.dispatchEvent(new Event('fpo_auth_logout'));
       }
     }

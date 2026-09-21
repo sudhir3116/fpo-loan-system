@@ -1,22 +1,27 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ChevronRight, Home } from 'lucide-react';
 import './Breadcrumbs.css';
 
-const PATH_NAME_MAP = {
-  admin: 'Admin Portal',
-  dashboard: 'Dashboard',
-  farmers: 'Farmer Registry',
-  loans: 'Loan Applications',
-  repayments: 'Repayments & EMI',
-  reports: 'Financial Reports',
-  notifications: 'Notifications & Alerts',
+const PATH_KEY_MAP = {
+  admin: 'nav.brandName',
+  dashboard: 'nav.dashboard',
+  farmers: 'nav.farmers',
+  loans: 'nav.loanApplications',
+  documents: 'nav.documentVerification',
+  disbursements: 'nav.loanDisbursement',
+  repayments: 'nav.repayments',
+  overdue: 'nav.overdue',
+  reports: 'nav.reports',
+  notifications: 'nav.notifications',
+  'audit-log': 'nav.auditLog',
 };
 
 const Breadcrumbs = ({ items }) => {
+  const { t } = useTranslation();
   const location = useLocation();
 
-  // If custom items passed, use them, otherwise generate from path
   const breadcrumbItems = React.useMemo(() => {
     if (items && items.length > 0) return items;
 
@@ -26,7 +31,13 @@ const Breadcrumbs = ({ items }) => {
     let currentPath = '';
     pathSegments.forEach((segment, index) => {
       currentPath += `/${segment}`;
-      const label = PATH_NAME_MAP[segment] || (segment.length > 15 ? `${segment.substring(0, 12)}...` : segment);
+      const translationKey = PATH_KEY_MAP[segment];
+      const label = translationKey
+        ? t(translationKey)
+        : segment.length > 15
+        ? `${segment.substring(0, 12)}...`
+        : segment;
+
       generated.push({
         label,
         path: currentPath,
@@ -35,7 +46,7 @@ const Breadcrumbs = ({ items }) => {
     });
 
     return generated;
-  }, [items, location.pathname]);
+  }, [items, location.pathname, t]);
 
   if (breadcrumbItems.length <= 1) return null;
 

@@ -4,10 +4,10 @@ import { useAuth } from '../context/AuthContext';
 import Loading from '../components/Loading';
 
 const ProtectedRoute = ({ children, requiredRole = 'FPO_ADMIN' }) => {
-  const { isAuthenticated, user, initializing } = useAuth();
+  const { authState, isAuthenticated, user, initializing } = useAuth();
   const location = useLocation();
 
-  if (initializing) {
+  if (initializing || authState === 'INITIALIZING') {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-main)' }}>
         <Loading message={`Verifying ${requiredRole === 'FPO_ADMIN' ? 'Admin' : 'Farmer'} Authorization...`} />
@@ -15,7 +15,7 @@ const ProtectedRoute = ({ children, requiredRole = 'FPO_ADMIN' }) => {
     );
   }
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated || authState !== 'AUTHENTICATED') {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 

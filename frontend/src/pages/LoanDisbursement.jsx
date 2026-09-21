@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Banknote,
   Search,
@@ -20,6 +21,7 @@ import {
   ErrorState,
   EmptyState,
   ConfirmDialog,
+  LoanIdDisplay,
   useToast,
 } from '../components';
 import './LoanDisbursement.css';
@@ -27,10 +29,8 @@ import './LoanDisbursement.css';
 const fmt = (n) =>
   new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n || 0);
 
-const fmtDate = (d) =>
-  d ? new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
-
 const LoanDisbursement = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { showSuccess, showError } = useToast();
 
@@ -53,7 +53,7 @@ const LoanDisbursement = () => {
         setLoans(response.data.data?.loans || []);
       }
     } catch (err) {
-      const msg = err.response?.data?.message || 'Failed to load approved loans';
+      const msg = err.response?.data?.message || t('disbursement.loadingLoans');
       setError(msg);
       showError(msg);
     } finally {
@@ -95,7 +95,7 @@ const LoanDisbursement = () => {
         disbursedAmount: Number(disbursedAmount),
       });
       if (response.data?.status === 'success') {
-        showSuccess(`Loan disbursed successfully. Repayment schedule generated.`);
+        showSuccess(t('loanDetail.successDisburse'));
         setSelectedLoan(null);
         await fetchLoans();
       }
@@ -109,27 +109,26 @@ const LoanDisbursement = () => {
   return (
     <div className="disbursement-page-container">
       <PageHeader
-        title="Loan Disbursement"
-        subtitle="Disburse approved loans and generate repayment schedules"
+        title={t('disbursement.title')}
       />
 
       {/* Summary Cards */}
       <div className="metrics-overview-grid">
         <div className="metric-card">
           <div className="metric-header">
-            <span className="metric-title">Loans Ready</span>
+            <span className="metric-title">{t('disbursement.loansReady')}</span>
             <div className="metric-icon-box emerald"><CheckCircle2 size={18} /></div>
           </div>
           <div className="metric-main-value">{summary.count}</div>
-          <div className="metric-footer-text">Approved, pending disbursement</div>
+          <div className="metric-footer-text">{t('disbursement.approvedPending')}</div>
         </div>
         <div className="metric-card">
           <div className="metric-header">
-            <span className="metric-title">Total Approved Amount</span>
+            <span className="metric-title">{t('disbursement.totalApprovedAmount')}</span>
             <div className="metric-icon-box blue"><IndianRupee size={18} /></div>
           </div>
           <div className="metric-main-value disburse-amount">{fmt(summary.totalAmount)}</div>
-          <div className="metric-footer-text">Across all approved loans</div>
+          <div className="metric-footer-text">{t('disbursement.acrossAllApproved')}</div>
         </div>
       </div>
 
@@ -140,7 +139,7 @@ const LoanDisbursement = () => {
           <input
             type="text"
             className="search-input"
-            placeholder="Search farmer, purpose, loan ID..."
+            placeholder={t('disbursement.searchPlaceholder')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -151,42 +150,42 @@ const LoanDisbursement = () => {
           disabled={loading}
         >
           <RefreshCw size={15} className={loading ? 'spinning' : ''} />
-          <span>Refresh</span>
+          <span>{t('common.refresh')}</span>
         </button>
       </div>
 
       {/* Content */}
       {loading ? (
         <div className="disbursement-loader-wrap">
-          <LoadingSpinner message="Loading approved loans..." />
+          <LoadingSpinner message={t('disbursement.loadingLoans')} />
         </div>
       ) : error ? (
         <ErrorState message={error} onRetry={fetchLoans} />
       ) : filtered.length === 0 ? (
         <EmptyState
-          icon={<Banknote size={40} />}
-          title={searchTerm ? 'No loans match your search' : 'No approved loans pending disbursement'}
-          message="Loans approved by admin will appear here ready for disbursement."
+          icon={Banknote}
+          title={searchTerm ? t('disbursement.noSearchMatch') : t('disbursement.noApprovedLoans')}
+          description={t('disbursement.emptyMessage')}
         />
       ) : (
         <div className="glass-panel disbursement-table-panel">
           <div className="disbursement-table-header">
             <span className="disbursement-results-count">
-              {filtered.length} loan{filtered.length !== 1 ? 's' : ''} ready for disbursement
+              {t('disbursement.readyCount', { count: filtered.length })}
             </span>
           </div>
           <div className="disbursement-table-responsive">
             <table className="disbursement-table">
               <thead>
                 <tr>
-                  <th>Farmer</th>
-                  <th>Loan ID</th>
-                  <th>Purpose</th>
-                  <th>Approved Amount</th>
-                  <th>Rate / Tenure</th>
-                  <th>Approved By</th>
-                  <th>Status</th>
-                  <th style={{ textAlign: 'right' }}>Action</th>
+                  <th>{t('disbursement.thFarmer')}</th>
+                  <th>{t('disbursement.thLoanId')}</th>
+                  <th>{t('disbursement.thPurpose')}</th>
+                  <th>{t('disbursement.thApprovedAmount')}</th>
+                  <th>{t('disbursement.thRateTenure')}</th>
+                  <th>{t('disbursement.thApprovedBy')}</th>
+                  <th>{t('disbursement.thStatus')}</th>
+                  <th style={{ textAlign: 'right' }}>{t('disbursement.thAction')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -204,17 +203,11 @@ const LoanDisbursement = () => {
                         </div>
                       </div>
                     </td>
+
                     {/* Loan ID */}
                     <td>
-                      <button
-                        className="loan-id-link"
-                        onClick={() => navigate(`/admin/loans/${loan._id}`)}
-                        title="View loan details"
-                      >
-                        #{loan._id.slice(-8).toUpperCase()}
-                      </button>
+                      <LoanIdDisplay id={loan._id} format="short" showCopy={true} />
                     </td>
-                    {/* Purpose */}
                     <td>
                       <span className="purpose-text">{loan.purpose}</span>
                     </td>
@@ -227,8 +220,8 @@ const LoanDisbursement = () => {
                     {/* Rate / Tenure */}
                     <td>
                       <div className="rate-tenure-cell">
-                        <span className="rate-val">{loan.interestRate}% p.a.</span>
-                        <span className="tenure-val">{loan.tenureMonths} months</span>
+                        <span className="rate-val">{loan.interestRate}{t('disbursement.pa')}</span>
+                        <span className="tenure-val">{loan.tenureMonths} {t('disbursement.months')}</span>
                       </div>
                     </td>
                     {/* Approved By */}
@@ -248,7 +241,7 @@ const LoanDisbursement = () => {
                         onClick={() => openDisburseDialog(loan)}
                       >
                         <Banknote size={14} />
-                        <span>Disburse</span>
+                        <span>{t('disbursement.disburseBtn')}</span>
                       </button>
                     </td>
                   </tr>
@@ -273,9 +266,9 @@ const LoanDisbursement = () => {
                 <Banknote size={24} />
               </div>
               <div>
-                <h3 className="disburse-modal-title">Confirm Disbursement</h3>
+                <h3 className="disburse-modal-title">{t('disbursement.confirmDisbursement')}</h3>
                 <p className="disburse-modal-sub">
-                  Loan for <strong>{selectedLoan.farmer?.name}</strong>
+                  {t('disbursement.loanForFarmer')} <strong>{selectedLoan.farmer?.name}</strong>
                 </p>
               </div>
             </div>
@@ -283,26 +276,26 @@ const LoanDisbursement = () => {
             <div className="disburse-modal-body">
               <div className="disburse-info-grid">
                 <div className="disburse-info-item">
-                  <span className="disburse-info-label"><User size={13} /> Farmer</span>
+                  <span className="disburse-info-label"><User size={13} /> {t('disbursement.thFarmer')}</span>
                   <span className="disburse-info-val">{selectedLoan.farmer?.name}</span>
                 </div>
                 <div className="disburse-info-item">
-                  <span className="disburse-info-label"><IndianRupee size={13} /> Approved Amount</span>
+                  <span className="disburse-info-label"><IndianRupee size={13} /> {t('disbursement.thApprovedAmount')}</span>
                   <span className="disburse-info-val text-emerald">{fmt(selectedLoan.loanAmount)}</span>
                 </div>
                 <div className="disburse-info-item">
-                  <span className="disburse-info-label"><TrendingUp size={13} /> Interest Rate</span>
-                  <span className="disburse-info-val">{selectedLoan.interestRate}% p.a.</span>
+                  <span className="disburse-info-label"><TrendingUp size={13} /> {t('disbursement.interestRate')}</span>
+                  <span className="disburse-info-val">{selectedLoan.interestRate}{t('disbursement.pa')}</span>
                 </div>
                 <div className="disburse-info-item">
-                  <span className="disburse-info-label"><Clock size={13} /> Tenure</span>
-                  <span className="disburse-info-val">{selectedLoan.tenureMonths} months</span>
+                  <span className="disburse-info-label"><Clock size={13} /> {t('disbursement.tenure')}</span>
+                  <span className="disburse-info-val">{selectedLoan.tenureMonths} {t('disbursement.months')}</span>
                 </div>
               </div>
 
               <div className="form-group" style={{ marginTop: '1rem' }}>
                 <label className="form-label" htmlFor="disburse-amount">
-                  Disbursement Amount <span style={{ color: '#f87171' }}>*</span>
+                  {t('disbursement.disbursementAmount')} <span style={{ color: '#f87171' }}>*</span>
                 </label>
                 <div className="disburse-amount-input-wrap">
                   <IndianRupee size={15} className="disburse-amount-icon" />
@@ -318,13 +311,12 @@ const LoanDisbursement = () => {
                   />
                 </div>
                 <span className="input-hint">
-                  Default: approved loan amount. Adjust if actual disbursement differs.
+                  {t('disbursement.disbursementHint')}
                 </span>
               </div>
 
               <p className="disburse-note">
-                After disbursement, the repayment schedule will be automatically generated
-                and the farmer will be able to view their EMI installments.
+                {t('disbursement.disbursementNote')}
               </p>
             </div>
 
@@ -334,7 +326,7 @@ const LoanDisbursement = () => {
                 onClick={() => setSelectedLoan(null)}
                 disabled={disburseLoading}
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 className="btn disburse-confirm-btn"
@@ -342,7 +334,7 @@ const LoanDisbursement = () => {
                 disabled={disburseLoading || !disbursedAmount || Number(disbursedAmount) <= 0}
               >
                 <Banknote size={15} />
-                <span>{disburseLoading ? 'Processing...' : 'Confirm Disbursement'}</span>
+                <span>{disburseLoading ? t('disbursement.processing') : t('disbursement.confirmDisbursement')}</span>
               </button>
             </div>
           </div>

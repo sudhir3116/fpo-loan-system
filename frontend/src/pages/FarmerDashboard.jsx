@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { loanAPI, repaymentAPI, documentAPI } from '../api/client';
 import {
@@ -19,6 +20,7 @@ import {
 import './FarmerDashboard.css';
 
 const FarmerDashboard = () => {
+  const { t } = useTranslation();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -97,8 +99,8 @@ const FarmerDashboard = () => {
             <Sprout size={24} />
           </div>
           <div>
-            <h2>Farmer Member Portal</h2>
-            <p>FPO Loan Application & Repayment Tracking</p>
+            <h2>{t('farmerDashboard.portalTitle')}</h2>
+            <p>{t('farmerDashboard.portalSub')}</p>
           </div>
         </div>
 
@@ -114,9 +116,9 @@ const FarmerDashboard = () => {
             <span className="badge badge-success role-badge">FARMER</span>
           </div>
 
-          <button onClick={handleLogout} className="btn-logout" title="Sign Out">
+          <button onClick={handleLogout} className="btn-logout" title={t('nav.signOut')}>
             <LogOut size={18} />
-            <span>Sign Out</span>
+            <span>{t('nav.signOut')}</span>
           </button>
         </div>
       </header>
@@ -130,7 +132,7 @@ const FarmerDashboard = () => {
               <CreditCard size={24} />
             </div>
             <div className="stat-data">
-              <span className="stat-label">Total Applied</span>
+              <span className="stat-label">{t('farmerDashboard.totalApplied')}</span>
               <span className="stat-value">₹{totalLoanAmount.toLocaleString('en-IN')}</span>
               <span className="stat-sub">{loans.length} application(s)</span>
             </div>
@@ -141,7 +143,7 @@ const FarmerDashboard = () => {
               <Clock size={24} />
             </div>
             <div className="stat-data">
-              <span className="stat-label">Active Loans</span>
+              <span className="stat-label">{t('farmerDashboard.activeLoans')}</span>
               <span className="stat-value">{activeLoans}</span>
               <span className="stat-sub">Under review or active</span>
             </div>
@@ -152,7 +154,7 @@ const FarmerDashboard = () => {
               <FileText size={24} />
             </div>
             <div className="stat-data">
-              <span className="stat-label">Pending Installments</span>
+              <span className="stat-label">{t('farmerDashboard.pendingInstallments')}</span>
               <span className="stat-value">{pendingRepayments}</span>
               <span className="stat-sub">Awaiting payment</span>
             </div>
@@ -163,12 +165,12 @@ const FarmerDashboard = () => {
               <ShieldCheck size={24} />
             </div>
             <div className="stat-data">
-              <span className="stat-label">KYC Status</span>
+              <span className="stat-label">{t('farmerDashboard.kycStatus')}</span>
               <span className="stat-value">
                 {user?.kycVerified ? (
-                  <span className="text-success">Verified</span>
+                  <span className="text-success">{t('farmers.kycVerified')}</span>
                 ) : (
-                  <span className="text-warning">Pending</span>
+                  <span className="text-warning">{t('farmers.kycPending')}</span>
                 )}
               </span>
               <span className="stat-sub">{user?.fpoName || 'Member'}</span>
@@ -184,27 +186,27 @@ const FarmerDashboard = () => {
               onClick={() => setActiveTab('loans')}
             >
               <CreditCard size={18} />
-              <span>My Loans ({loans.length})</span>
+              <span>{t('farmerDashboard.myLoans')} ({loans.length})</span>
             </button>
             <button
               className={`tab-btn ${activeTab === 'repayments' ? 'active' : ''}`}
               onClick={() => setActiveTab('repayments')}
             >
               <Clock size={18} />
-              <span>Repayments ({repayments.length})</span>
+              <span>{t('farmerDashboard.repayments')} ({repayments.length})</span>
             </button>
             <button
               className={`tab-btn ${activeTab === 'documents' ? 'active' : ''}`}
               onClick={() => setActiveTab('documents')}
             >
               <FolderOpen size={18} />
-              <span>Documents ({documents.length})</span>
+              <span>{t('farmerDashboard.documents')} ({documents.length})</span>
             </button>
           </div>
 
-          <button onClick={fetchFarmerData} className="btn-refresh" disabled={loading} title="Refresh Data">
+          <button onClick={fetchFarmerData} className="btn-refresh" disabled={loading} title={t('common.refresh')}>
             <RefreshCw size={16} className={loading ? 'spinning' : ''} />
-            <span>Refresh</span>
+            <span>{t('common.refresh')}</span>
           </button>
         </div>
 
@@ -220,7 +222,7 @@ const FarmerDashboard = () => {
           {loading ? (
             <div className="farmer-loading-state">
               <RefreshCw size={28} className="spinning" />
-              <p>Loading your farm records...</p>
+              <p>{t('common.loading')}</p>
             </div>
           ) : (
             <>
@@ -230,19 +232,19 @@ const FarmerDashboard = () => {
                   {loans.length === 0 ? (
                     <div className="farmer-empty-state">
                       <CreditCard size={42} />
-                      <p>No loan applications found.</p>
+                      <p>{t('farmerDashboard.noLoans')}</p>
                       <span>Your submitted loan applications will appear here.</span>
                     </div>
                   ) : (
                     <table className="farmer-table">
                       <thead>
                         <tr>
-                          <th>Purpose</th>
-                          <th>Loan Amount</th>
-                          <th>Tenure</th>
-                          <th>Interest Rate</th>
-                          <th>Status</th>
-                          <th>Applied Date</th>
+                          <th>{t('loans.purpose')}</th>
+                          <th>{t('loans.amount')}</th>
+                          <th>{t('loans.tenure')}</th>
+                          <th>{t('disbursement.interestRate')}</th>
+                          <th>{t('loans.status')}</th>
+                          <th>{t('loans.appliedDate')}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -272,25 +274,25 @@ const FarmerDashboard = () => {
                   {repayments.length === 0 ? (
                     <div className="farmer-empty-state">
                       <Clock size={42} />
-                      <p>No repayment schedules active.</p>
+                      <p>{t('farmerDashboard.noRepayments')}</p>
                       <span>Repayment schedules are generated once an approved loan is disbursed.</span>
                     </div>
                   ) : (
                     <table className="farmer-table">
                       <thead>
                         <tr>
-                          <th>Installment #</th>
-                          <th>Amount Due</th>
-                          <th>Due Date</th>
-                          <th>Status</th>
-                          <th>Amount Paid</th>
-                          <th>Paid Date</th>
+                          <th>{t('repayments.installment')} #</th>
+                          <th>{t('repayments.amountDue')}</th>
+                          <th>{t('repayments.dueDate')}</th>
+                          <th>{t('loans.status')}</th>
+                          <th>{t('repayments.amountPaid')}</th>
+                          <th>{t('repayments.paidDate')}</th>
                         </tr>
                       </thead>
                       <tbody>
                         {repayments.map((repay) => (
                           <tr key={repay._id}>
-                            <td className="font-medium">Installment #{repay.installmentNumber}</td>
+                            <td className="font-medium">{t('repayments.installmentTag', { number: repay.installmentNumber })}</td>
                             <td className="font-semibold">₹{repay.amountDue?.toLocaleString('en-IN')}</td>
                             <td>{new Date(repay.dueDate).toLocaleDateString()}</td>
                             <td>
@@ -314,18 +316,18 @@ const FarmerDashboard = () => {
                   {documents.length === 0 ? (
                     <div className="farmer-empty-state">
                       <FolderOpen size={42} />
-                      <p>No supporting documents uploaded.</p>
+                      <p>{t('farmerDashboard.noDocs')}</p>
                       <span>Land records and identity proofs uploaded for your loans will appear here.</span>
                     </div>
                   ) : (
                     <table className="farmer-table">
                       <thead>
                         <tr>
-                          <th>Document Name</th>
-                          <th>Type</th>
-                          <th>Verification Status</th>
-                          <th>Uploaded Date</th>
-                          <th>View File</th>
+                          <th>{t('documents.docName')}</th>
+                          <th>{t('documents.docType')}</th>
+                          <th>{t('documents.status')}</th>
+                          <th>{t('documents.uploadedAt')}</th>
+                          <th>{t('documents.viewDocument')}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -347,7 +349,7 @@ const FarmerDashboard = () => {
                                   rel="noopener noreferrer"
                                   className="view-link"
                                 >
-                                  <span>Open File</span>
+                                  <span>{t('common.view')}</span>
                                   <ExternalLink size={14} />
                                 </a>
                               ) : (

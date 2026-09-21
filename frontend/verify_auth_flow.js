@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const BASE_URL = process.env.VITE_API_BASE_URL || 'http://localhost:5001/api';
+const BASE_URL = process.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 
 async function runAuthVerification() {
   console.log('\n======================================================');

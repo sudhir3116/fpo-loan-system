@@ -1,10 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { User, LogOut, ChevronDown, Building2, ShieldCheck, Mail } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import './AdminProfile.css';
 
 const AdminProfile = ({ className = '' }) => {
+  const { t } = useTranslation();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
@@ -12,7 +14,7 @@ const AdminProfile = ({ className = '' }) => {
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    navigate('/login', { replace: true });
   };
 
   useEffect(() => {
@@ -37,8 +39,8 @@ const AdminProfile = ({ className = '' }) => {
           <User size={18} />
         </div>
         <div className="profile-info-compact">
-          <span className="profile-name">{user?.name || 'Administrator'}</span>
-          <span className="profile-role-badge">FPO_ADMIN</span>
+          <span className="profile-name">{user?.name || t('profile.adminName')}</span>
+          <span className="profile-role-badge">{t('header.profileRole')}</span>
         </div>
         <ChevronDown size={14} className={`chevron-icon ${isOpen ? 'rotate' : ''}`} />
       </button>
@@ -50,7 +52,7 @@ const AdminProfile = ({ className = '' }) => {
               <User size={24} />
             </div>
             <div className="user-text-details">
-              <h4 className="dropdown-user-name">{user?.name || 'Administrator'}</h4>
+              <h4 className="dropdown-user-name">{user?.name || t('profile.adminName')}</h4>
               <p className="dropdown-user-email">
                 <Mail size={12} />
                 <span>{user?.email || 'admin@fpo.org'}</span>
@@ -64,7 +66,7 @@ const AdminProfile = ({ className = '' }) => {
             <div className="fpo-detail-item">
               <Building2 size={15} className="fpo-detail-icon" />
               <div className="fpo-detail-text">
-                <span className="detail-label">FPO Organization</span>
+                <span className="detail-label">{t('farmers.fpoName')}</span>
                 <span className="detail-value">{user?.fpoName || 'Green Valley FPO'}</span>
               </div>
             </div>
@@ -72,7 +74,7 @@ const AdminProfile = ({ className = '' }) => {
             <div className="fpo-detail-item">
               <ShieldCheck size={15} className="fpo-detail-icon" />
               <div className="fpo-detail-text">
-                <span className="detail-label">Registration No</span>
+                <span className="detail-label">Reg No</span>
                 <span className="detail-value">{user?.fpoRegistrationNo || 'FPO-REG-2024'}</span>
               </div>
             </div>
@@ -82,7 +84,7 @@ const AdminProfile = ({ className = '' }) => {
 
           <button onClick={handleLogout} className="dropdown-logout-btn">
             <LogOut size={16} />
-            <span>Sign Out</span>
+            <span>{t('nav.signOut')}</span>
           </button>
         </div>
       )}

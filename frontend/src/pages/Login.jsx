@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { Building2, Lock, Mail, ShieldAlert, ArrowRight, Eye, EyeOff, Loader2 } from 'lucide-react';
 import './Login.css';
 
 const Login = () => {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [formError, setFormError] = useState('');
 
-  const { login, loginWithGoogle, loading, error: authError, setError, isAuthenticated, user } = useAuth();
+  const { login, loginWithGoogle, loading, initializing, authState, error: authError, setError, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -26,10 +28,10 @@ const Login = () => {
 
   // If already authenticated, redirect to appropriate role dashboard
   useEffect(() => {
-    if (isAuthenticated && user) {
+    if (authState === 'AUTHENTICATED' && user) {
       navigate(getRedirectPath(user.role), { replace: true });
     }
-  }, [isAuthenticated, user, navigate]);
+  }, [authState, user, navigate]);
 
   // Initialize Google Identity Services
   useEffect(() => {
@@ -88,16 +90,16 @@ const Login = () => {
 
   const validateForm = () => {
     if (!email.trim()) {
-      setFormError('Please enter your email address.');
+      setFormError(t('auth.loginFailed'));
       return false;
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email.trim())) {
-      setFormError('Please enter a valid email address format.');
+      setFormError(t('auth.loginFailed'));
       return false;
     }
     if (!password) {
-      setFormError('Please enter your password.');
+      setFormError(t('auth.loginFailed'));
       return false;
     }
     return true;
@@ -118,7 +120,15 @@ const Login = () => {
     }
   };
 
-  const displayError = formError || authError;
+  const displayError = formError || (authError ? t('auth.loginFailed') : null);
+
+  if (initializing) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-main)' }}>
+        <Loader2 size={36} className="spinner-icon" style={{ animation: 'spin 1s linear infinite', color: 'var(--primary-color, #16a34a)' }} />
+      </div>
+    );
+  }
 
   return (
     <div className="login-container">
@@ -127,8 +137,8 @@ const Login = () => {
           <div className="login-brand-icon">
             <Building2 size={28} />
           </div>
-          <h1>FPO Portal</h1>
-          <p>Farmer Producer Organization Credit Management</p>
+          <h1>{t('auth.portalTitle')}</h1>
+          <p>{t('auth.portalSub')}</p>
         </div>
 
         {displayError && (
@@ -143,7 +153,7 @@ const Login = () => {
         <form onSubmit={handleSubmit} className="login-form" noValidate>
           <div className="form-group">
             <label className="form-label" htmlFor="admin-email">
-              Email Address
+              {t('auth.emailLabel')}
             </label>
             <div className="input-wrapper">
               <Mail size={18} className="input-icon" />
@@ -151,7 +161,7 @@ const Login = () => {
                 id="admin-email"
                 type="email"
                 className="form-input with-icon"
-                placeholder="you@example.com"
+                placeholder={t('auth.emailPlaceholder')}
                 value={email}
                 onChange={(e) => {
                   setEmail(e.target.value);
@@ -166,7 +176,7 @@ const Login = () => {
 
           <div className="form-group">
             <label className="form-label" htmlFor="admin-password">
-              Password
+              {t('auth.passwordLabel')}
             </label>
             <div className="input-wrapper">
               <Lock size={18} className="input-icon" />
@@ -200,11 +210,11 @@ const Login = () => {
             {loading ? (
               <>
                 <Loader2 size={18} className="spinner-icon" />
-                <span>Authenticating...</span>
+                <span>{t('auth.signingIn')}</span>
               </>
             ) : (
               <>
-                <span>Sign In to Portal</span>
+                <span>{t('auth.signInBtn')}</span>
                 <ArrowRight size={18} />
               </>
             )}
@@ -220,7 +230,7 @@ const Login = () => {
         </div>
 
         <div className="login-footer">
-          <p>Authorized access for Farmer Members & FPO Administrators.</p>
+          <p>{t('auth.authorizedOnly')}</p>
         </div>
       </div>
     </div>

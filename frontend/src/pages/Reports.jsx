@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   BarChart3,
   TrendingUp,
@@ -26,11 +27,13 @@ import {
   LoadingSpinner,
   ErrorState,
   EmptyState,
+  LoanIdDisplay,
   useToast,
 } from '../components';
 import './Reports.css';
 
 const Reports = () => {
+  const { t } = useTranslation();
   const { showSuccess, showError } = useToast();
 
   const [loading, setLoading] = useState(true);
@@ -42,7 +45,7 @@ const Reports = () => {
   const [activeTab, setActiveTab] = useState('executive');
 
   // Report Filter States
-  const [dateRange, setDateRange] = useState('ALL'); // 'ALL' | '30DAYS' | 'THIS_MONTH' | 'THIS_YEAR'
+  const [dateRange, setDateRange] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [repayStatusFilter, setRepayStatusFilter] = useState('ALL');
   const [fpoFilter, setFpoFilter] = useState('ALL');
@@ -58,14 +61,9 @@ const Reports = () => {
 
       if (loansRes.status === 'fulfilled' && loansRes.value.data?.status === 'success') {
         setLoans(loansRes.value.data.data.loans || []);
-      } else if (loansRes.status === 'rejected') {
-        console.warn('Loan report fetch warning:', loansRes.reason?.message);
       }
-
       if (repayRes.status === 'fulfilled' && repayRes.value.data?.status === 'success') {
         setRepayments(repayRes.value.data.data.repayments || []);
-      } else if (repayRes.status === 'rejected') {
-        console.warn('Repayment report fetch warning:', repayRes.reason?.message);
       }
     } catch (err) {
       setError(err.message || 'Failed to compile report data from backend API');
@@ -250,9 +248,9 @@ const Reports = () => {
       link.click();
       document.body.removeChild(link);
 
-      showSuccess('Report CSV exported successfully');
+      showSuccess(t('reports.csvExportSuccess'));
     } catch {
-      showError('Failed to generate CSV export');
+      showError(t('reports.csvExportError'));
     }
   };
 
@@ -263,17 +261,16 @@ const Reports = () => {
   return (
     <div className="reports-page-container">
       <PageHeader
-        title="Financial & Operational Analytics Reports"
-        subtitle="Comprehensive credit portfolio insights, repayment efficiency ratios, and compliance reports compiled directly from backend data"
+        title={t('reports.title')}
         actions={
           <div className="report-header-actions">
             <button onClick={handleExportCSV} className="btn btn-secondary">
               <Download size={15} />
-              <span>Export CSV</span>
+              <span>{t('reports.exportCsv')}</span>
             </button>
             <button onClick={handlePrintReport} className="btn btn-secondary">
               <Printer size={15} />
-              <span>Print / PDF</span>
+              <span>{t('reports.printPdf')}</span>
             </button>
             <button onClick={fetchReportData} className="btn btn-secondary" disabled={loading}>
               <RefreshCw size={15} className={loading ? 'spinning' : ''} />
@@ -286,7 +283,7 @@ const Reports = () => {
       <div className="reports-filter-bar glass-panel">
         <div className="filter-item">
           <label htmlFor="date-range-select" className="filter-label">
-            <Calendar size={14} /> Date Horizon:
+            <Calendar size={14} /> {t('reports.dateHorizon')}:
           </label>
           <select
             id="date-range-select"
@@ -294,16 +291,16 @@ const Reports = () => {
             onChange={(e) => setDateRange(e.target.value)}
             className="filter-select"
           >
-            <option value="ALL">All Time</option>
-            <option value="30DAYS">Last 30 Days</option>
-            <option value="THIS_MONTH">This Calendar Month</option>
-            <option value="THIS_YEAR">This Calendar Year</option>
+            <option value="ALL">{t('reports.allTime')}</option>
+            <option value="30DAYS">{t('reports.last30Days')}</option>
+            <option value="THIS_MONTH">{t('reports.thisMonth')}</option>
+            <option value="THIS_YEAR">{t('reports.thisYear')}</option>
           </select>
         </div>
 
         <div className="filter-item">
           <label htmlFor="loan-status-select" className="filter-label">
-            <Filter size={14} /> Loan Status:
+            <Filter size={14} /> {t('loans.status')}:
           </label>
           <select
             id="loan-status-select"
@@ -311,19 +308,19 @@ const Reports = () => {
             onChange={(e) => setStatusFilter(e.target.value)}
             className="filter-select"
           >
-            <option value="ALL">All Loan Statuses</option>
-            <option value="SUBMITTED">Submitted</option>
-            <option value="UNDER_REVIEW">Under Review</option>
-            <option value="APPROVED">Approved</option>
-            <option value="REJECTED">Rejected</option>
-            <option value="DISBURSED">Disbursed</option>
-            <option value="CLOSED">Closed</option>
+            <option value="ALL">{t('loans.allStatuses')}</option>
+            <option value="SUBMITTED">{t('status.submitted')}</option>
+            <option value="UNDER_REVIEW">{t('status.underReview')}</option>
+            <option value="APPROVED">{t('status.approved')}</option>
+            <option value="REJECTED">{t('status.rejected')}</option>
+            <option value="DISBURSED">{t('status.disbursed')}</option>
+            <option value="CLOSED">{t('status.closed')}</option>
           </select>
         </div>
 
         <div className="filter-item">
           <label htmlFor="fpo-select" className="filter-label">
-            <Building2 size={14} /> FPO Organization:
+            <Building2 size={14} /> {t('farmers.fpoName')}:
           </label>
           <select
             id="fpo-select"
@@ -331,7 +328,7 @@ const Reports = () => {
             onChange={(e) => setFpoFilter(e.target.value)}
             className="filter-select"
           >
-            <option value="ALL">All FPO Organizations</option>
+            <option value="ALL">{t('reports.allFpos')}</option>
             {fpoOptions.map((fpo) => (
               <option key={fpo} value={fpo}>
                 {fpo}
@@ -348,35 +345,35 @@ const Reports = () => {
           onClick={() => setActiveTab('executive')}
         >
           <BarChart3 size={16} />
-          <span>Executive Financial Summary</span>
+          <span>{t('reports.executiveSummary')}</span>
         </button>
         <button
           className={`report-tab-btn ${activeTab === 'loans' ? 'active' : ''}`}
           onClick={() => setActiveTab('loans')}
         >
           <FileText size={16} />
-          <span>Loan Applications Audit ({filteredLoans.length})</span>
+          <span>{t('reports.loanAudit', { count: filteredLoans.length })}</span>
         </button>
         <button
           className={`report-tab-btn ${activeTab === 'repayments' ? 'active' : ''}`}
           onClick={() => setActiveTab('repayments')}
         >
           <CreditCard size={16} />
-          <span>Repayments & Default Risk ({filteredRepayments.length})</span>
+          <span>{t('reports.repaymentRisk', { count: filteredRepayments.length })}</span>
         </button>
         <button
           className={`report-tab-btn ${activeTab === 'fpo' ? 'active' : ''}`}
           onClick={() => setActiveTab('fpo')}
         >
           <Building2 size={16} />
-          <span>FPO Organization Breakdown</span>
+          <span>{t('reports.fpoBreakdown')}</span>
         </button>
       </div>
 
       {/* Main Content Sections */}
       {loading ? (
         <div className="reports-loading-container glass-panel">
-          <LoadingSpinner message="Compiling real-time report analytics from backend database..." />
+          <LoadingSpinner message={t('common.loading')} />
         </div>
       ) : error ? (
         <ErrorState title="Failed to Compile Report Data" message={error} onRetry={fetchReportData} />
@@ -388,49 +385,49 @@ const Reports = () => {
               {/* Summary Metrics KPI Grid */}
               <div className="kpi-cards-grid">
                 <div className="kpi-card glass-panel">
-                  <span className="kpi-label">Total Credit Applications</span>
+                  <span className="kpi-label">{t('reports.totalCreditApps')}</span>
                   <span className="kpi-value">{analytics.totalApplications}</span>
-                  <span className="kpi-subtext">Requested: ₹{analytics.totalRequestedCapital.toLocaleString('en-IN')}</span>
+                  <span className="kpi-subtext">{t('reports.requestedCapital')}: ₹{analytics.totalRequestedCapital.toLocaleString('en-IN')}</span>
                 </div>
 
                 <div className="kpi-card glass-panel">
-                  <span className="kpi-label">Disbursed Portfolio Capital</span>
+                  <span className="kpi-label">{t('reports.disbursedPortfolioCapital')}</span>
                   <span className="kpi-value text-indigo">
                     ₹{analytics.totalDisbursedCapital.toLocaleString('en-IN')}
                   </span>
                   <span className="kpi-subtext">
-                    {analytics.totalDisbursedCount} Active | {analytics.totalClosedCount} Closed
+                    {t('reports.activeAndClosed', { active: analytics.totalDisbursedCount, closed: analytics.totalClosedCount })}
                   </span>
                 </div>
 
                 <div className="kpi-card glass-panel">
-                  <span className="kpi-label">Collections Repaid</span>
+                  <span className="kpi-label">{t('reports.collectionsRepaid')}</span>
                   <span className="kpi-value text-emerald">
                     ₹{analytics.totalCollectedRepaid.toLocaleString('en-IN')}
                   </span>
-                  <span className="kpi-subtext">Efficiency Ratio: {analytics.collectionEfficiency}%</span>
+                  <span className="kpi-subtext">{t('reports.efficiencyRatio')}: {analytics.collectionEfficiency}%</span>
                 </div>
 
                 <div className="kpi-card glass-panel">
-                  <span className="kpi-label">Outstanding Balance</span>
+                  <span className="kpi-label">{t('reports.outstandingBalance')}</span>
                   <span className="kpi-value text-amber">
                     ₹{analytics.totalOutstandingCapital.toLocaleString('en-IN')}
                   </span>
-                  <span className="kpi-subtext">Capital pending collection</span>
+                  <span className="kpi-subtext">{t('reports.pendingCollection')}</span>
                 </div>
 
                 <div className="kpi-card glass-panel">
-                  <span className="kpi-label">Overdue Risk Exposure</span>
+                  <span className="kpi-label">{t('reports.overdueRiskExposure')}</span>
                   <span className="kpi-value text-rose">
                     ₹{analytics.totalOverdueAmount.toLocaleString('en-IN')}
                   </span>
-                  <span className="kpi-subtext">{analytics.overdueInstallmentCount} Overdue Installments</span>
+                  <span className="kpi-subtext">{t('reports.overdueInstallmentsCount', { count: analytics.overdueInstallmentCount })}</span>
                 </div>
 
                 <div className="kpi-card glass-panel">
-                  <span className="kpi-label">Evaluation Approval Rate</span>
+                  <span className="kpi-label">{t('reports.approvalRate')}</span>
                   <span className="kpi-value">{analytics.approvalRate}%</span>
-                  <span className="kpi-subtext">Rejection Rate: {analytics.rejectionRate}%</span>
+                  <span className="kpi-subtext">{t('reports.rejectionRate')}: {analytics.rejectionRate}%</span>
                 </div>
               </div>
 
@@ -438,11 +435,11 @@ const Reports = () => {
               <div className="visual-charts-grid">
                 {/* Application Lifecycle Distribution Chart */}
                 <div className="chart-card glass-panel">
-                  <h3 className="chart-title">Application Pipeline Breakdown</h3>
+                  <h3 className="chart-title">{t('reports.pipelineBreakdown')}</h3>
                   <div className="chart-bars-list">
                     <div className="bar-item">
                       <div className="bar-info">
-                        <span>Submitted Applications ({analytics.totalSubmittedCount})</span>
+                        <span>{t('status.submitted')} ({analytics.totalSubmittedCount})</span>
                         <span>{analytics.totalApplications > 0 ? Math.round((analytics.totalSubmittedCount / analytics.totalApplications) * 100) : 0}%</span>
                       </div>
                       <div className="bar-track">
@@ -457,7 +454,7 @@ const Reports = () => {
 
                     <div className="bar-item">
                       <div className="bar-info">
-                        <span>Under Review ({analytics.totalUnderReviewCount})</span>
+                        <span>{t('status.underReview')} ({analytics.totalUnderReviewCount})</span>
                         <span>{analytics.totalApplications > 0 ? Math.round((analytics.totalUnderReviewCount / analytics.totalApplications) * 100) : 0}%</span>
                       </div>
                       <div className="bar-track">
@@ -472,7 +469,7 @@ const Reports = () => {
 
                     <div className="bar-item">
                       <div className="bar-info">
-                        <span>Approved ({analytics.totalApprovedCount})</span>
+                        <span>{t('status.approved')} ({analytics.totalApprovedCount})</span>
                         <span>{analytics.totalApplications > 0 ? Math.round((analytics.totalApprovedCount / analytics.totalApplications) * 100) : 0}%</span>
                       </div>
                       <div className="bar-track">
@@ -487,7 +484,7 @@ const Reports = () => {
 
                     <div className="bar-item">
                       <div className="bar-info">
-                        <span>Disbursed Active Loans ({analytics.totalDisbursedCount})</span>
+                        <span>{t('status.disbursed')} ({analytics.totalDisbursedCount})</span>
                         <span>{analytics.totalApplications > 0 ? Math.round((analytics.totalDisbursedCount / analytics.totalApplications) * 100) : 0}%</span>
                       </div>
                       <div className="bar-track">
@@ -502,7 +499,7 @@ const Reports = () => {
 
                     <div className="bar-item">
                       <div className="bar-info">
-                        <span>Closed Paid Off Loans ({analytics.totalClosedCount})</span>
+                        <span>{t('status.closed')} ({analytics.totalClosedCount})</span>
                         <span>{analytics.totalApplications > 0 ? Math.round((analytics.totalClosedCount / analytics.totalApplications) * 100) : 0}%</span>
                       </div>
                       <div className="bar-track">
@@ -517,7 +514,7 @@ const Reports = () => {
 
                     <div className="bar-item">
                       <div className="bar-info">
-                        <span>Rejected Applications ({analytics.totalRejectedCount})</span>
+                        <span>{t('status.rejected')} ({analytics.totalRejectedCount})</span>
                         <span>{analytics.totalApplications > 0 ? Math.round((analytics.totalRejectedCount / analytics.totalApplications) * 100) : 0}%</span>
                       </div>
                       <div className="bar-track">
@@ -534,20 +531,20 @@ const Reports = () => {
 
                 {/* Capital Collection Recovery Meter */}
                 <div className="chart-card glass-panel">
-                  <h3 className="chart-title">Capital Collection Recovery Meter</h3>
+                  <h3 className="chart-title">{t('reports.recoveryMeter')}</h3>
                   <div className="recovery-meter-container">
                     <div className="meter-circle">
                       <span className="meter-percentage">{analytics.collectionEfficiency}%</span>
-                      <span className="meter-label">Recovered</span>
+                      <span className="meter-label">{t('reports.recovered')}</span>
                     </div>
                     <div className="meter-stats">
                       <div className="meter-stat-row">
                         <span className="stat-dot emerald" />
-                        <span className="stat-text">Repaid: ₹{analytics.totalCollectedRepaid.toLocaleString('en-IN')}</span>
+                        <span className="stat-text">{t('reports.repaid')}: ₹{analytics.totalCollectedRepaid.toLocaleString('en-IN')}</span>
                       </div>
                       <div className="meter-stat-row">
                         <span className="stat-dot amber" />
-                        <span className="stat-text">Outstanding: ₹{analytics.totalOutstandingCapital.toLocaleString('en-IN')}</span>
+                        <span className="stat-text">{t('reports.outstanding')}: ₹{analytics.totalOutstandingCapital.toLocaleString('en-IN')}</span>
                       </div>
                     </div>
                   </div>
@@ -562,42 +559,42 @@ const Reports = () => {
               <DataTable
                 columns={[
                   {
-                    header: 'Loan ID',
+                    header: t('loans.loanId'),
                     key: '_id',
-                    render: (l) => <span className="mono-text">#{l._id.substring(0, 10)}...</span>,
+                    render: (l) => <LoanIdDisplay id={l._id} format="short" showCopy={true} />,
                   },
                   {
-                    header: 'Farmer Member',
+                    header: t('loans.farmer'),
                     key: 'farmer',
                     render: (l) => l.farmer?.name || 'Farmer',
                   },
                   {
-                    header: 'FPO Organization',
+                    header: t('farmers.fpoName'),
                     key: 'fpoName',
                     render: (l) => l.farmer?.fpoName || 'Green Valley FPO',
                   },
                   {
-                    header: 'Requested Amount',
+                    header: t('loans.amount'),
                     key: 'loanAmount',
                     render: (l) => `₹${l.loanAmount?.toLocaleString('en-IN')}`,
                   },
                   {
-                    header: 'Disbursed Amount',
+                    header: t('disbursement.disbursedAmount'),
                     key: 'disbursedAmount',
                     render: (l) => (l.disbursedAmount > 0 ? `₹${l.disbursedAmount?.toLocaleString('en-IN')}` : '—'),
                   },
                   {
-                    header: 'Tenure',
+                    header: t('loans.tenure'),
                     key: 'tenureMonths',
                     render: (l) => `${l.tenureMonths}m (${l.interestRate || 0}%)`,
                   },
                   {
-                    header: 'Application Date',
+                    header: t('loans.appliedDate'),
                     key: 'createdAt',
                     render: (l) => new Date(l.createdAt).toLocaleDateString('en-IN'),
                   },
                   {
-                    header: 'Status',
+                    header: t('loans.status'),
                     key: 'status',
                     align: 'center',
                     render: (l) => <StatusBadge status={l.status} size="small" />,
@@ -614,48 +611,48 @@ const Reports = () => {
               <DataTable
                 columns={[
                   {
-                    header: 'Repayment ID',
+                    header: t('repayments.title'),
                     key: '_id',
                     render: (r) => <span className="mono-text">#{r._id.substring(0, 10)}...</span>,
                   },
                   {
-                    header: 'Loan ID',
+                    header: t('loans.loanId'),
                     key: 'loan',
-                    render: (r) => <span className="mono-text">#{(r.loan?._id || r.loan || '').substring(0, 8)}</span>,
+                    render: (r) => <LoanIdDisplay id={r.loan?._id || r.loan} format="short" showCopy={true} />,
                   },
                   {
-                    header: 'Borrower',
+                    header: t('repayments.borrower'),
                     key: 'borrower',
                     render: (r) => r.borrower?.name || 'Farmer',
                   },
                   {
-                    header: 'Installment',
+                    header: t('repayments.installment'),
                     key: 'installmentNumber',
                     align: 'center',
                     render: (r) => `#${r.installmentNumber}`,
                   },
                   {
-                    header: 'Due Date',
+                    header: t('repayments.dueDate'),
                     key: 'dueDate',
                     render: (r) => new Date(r.dueDate).toLocaleDateString('en-IN'),
                   },
                   {
-                    header: 'Amount Due',
+                    header: t('repayments.amountDue'),
                     key: 'amountDue',
                     render: (r) => `₹${r.amountDue?.toLocaleString('en-IN')}`,
                   },
                   {
-                    header: 'Amount Paid',
+                    header: t('repayments.amountPaid'),
                     key: 'amountPaid',
                     render: (r) => `₹${r.amountPaid?.toLocaleString('en-IN')}`,
                   },
                   {
-                    header: 'Remaining',
+                    header: t('repayments.remaining'),
                     key: 'remaining',
                     render: (r) => `₹${Math.max(0, (r.amountDue || 0) - (r.amountPaid || 0)).toLocaleString('en-IN')}`,
                   },
                   {
-                    header: 'Status',
+                    header: t('repayments.paymentStatus'),
                     key: 'paymentStatus',
                     align: 'center',
                     render: (r) => <StatusBadge status={r.paymentStatus} size="small" />,
@@ -672,7 +669,7 @@ const Reports = () => {
               <DataTable
                 columns={[
                   {
-                    header: 'FPO Organization Name',
+                    header: t('farmers.fpoName'),
                     key: 'name',
                     render: (f) => (
                       <div className="fpo-cell">
@@ -682,30 +679,30 @@ const Reports = () => {
                     ),
                   },
                   {
-                    header: 'Registration No',
+                    header: t('reports.registrationNo'),
                     key: 'regNo',
                     render: (f) => f.regNo,
                   },
                   {
-                    header: 'Total Applications',
+                    header: t('reports.totalCreditApps'),
                     key: 'totalLoans',
                     align: 'center',
                     render: (f) => f.totalLoans,
                   },
                   {
-                    header: 'Active Disbursed Loans',
+                    header: t('dashboard.activeLoans'),
                     key: 'activeLoans',
                     align: 'center',
                     render: (f) => f.activeLoans,
                   },
                   {
-                    header: 'Closed Paid Off Loans',
+                    header: t('status.closed'),
                     key: 'closedLoans',
                     align: 'center',
                     render: (f) => f.closedLoans,
                   },
                   {
-                    header: 'Disbursed Capital (₹)',
+                    header: t('disbursement.disbursedAmount'),
                     key: 'disbursedCapital',
                     align: 'right',
                     render: (f) => `₹${f.disbursedCapital.toLocaleString('en-IN')}`,

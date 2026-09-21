@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ScrollText,
   RefreshCw,
@@ -18,6 +19,7 @@ import {
   LoadingSpinner,
   ErrorState,
   EmptyState,
+  LoanIdDisplay,
   useToast,
 } from '../components';
 import './AuditLog.css';
@@ -39,14 +41,10 @@ const fmtDateTime = (d) => {
     ' ' + date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
 };
 
-const ACTION_FILTER_OPTIONS = [
-  { key: 'ALL', label: 'All Actions' },
-  ...Object.entries(ACTION_CONFIG).map(([key, cfg]) => ({ key, label: cfg.label })),
-];
-
 const PAGE_SIZE = 25;
 
 const AuditLog = () => {
+  const { t } = useTranslation();
   const { showError } = useToast();
 
   const [loading, setLoading] = useState(true);
@@ -57,6 +55,11 @@ const AuditLog = () => {
 
   const [actionFilter, setActionFilter] = useState('ALL');
   const [currentPage, setCurrentPage] = useState(1);
+
+  const ACTION_FILTER_OPTIONS = [
+    { key: 'ALL', label: t('auditLog.allActions') },
+    ...Object.entries(ACTION_CONFIG).map(([key, cfg]) => ({ key, label: cfg.label })),
+  ];
 
   const fetchLogs = async (page = currentPage) => {
     setLoading(true);
@@ -81,13 +84,8 @@ const AuditLog = () => {
   };
 
   useEffect(() => {
-    setCurrentPage(1);
-    fetchLogs(1);
-  }, [actionFilter]);
-
-  useEffect(() => {
     fetchLogs(currentPage);
-  }, [currentPage]);
+  }, [actionFilter, currentPage]);
 
   const goToPage = (p) => {
     if (p < 1 || p > totalPages) return;
@@ -97,8 +95,7 @@ const AuditLog = () => {
   return (
     <div className="auditlog-page-container">
       <PageHeader
-        title="Audit Log"
-        subtitle="Read-only record of administrative actions performed in the system"
+        title={t('auditLog.title')}
       />
 
       {/* Filter Bar */}
@@ -114,7 +111,7 @@ const AuditLog = () => {
               <option key={key} value={key}>{label}</option>
             ))}
           </select>
-          <span className="auditlog-total-count">{totalCount} entries</span>
+          <span className="auditlog-total-count">{t('auditLog.entries', { count: totalCount })}</span>
         </div>
         <button
           className="btn btn-secondary refresh-btn"
@@ -122,21 +119,21 @@ const AuditLog = () => {
           disabled={loading}
         >
           <RefreshCw size={15} className={loading ? 'spinning' : ''} />
-          <span>Refresh</span>
+          <span>{t('common.refresh')}</span>
         </button>
       </div>
 
       {/* Content */}
       {loading ? (
         <div className="auditlog-loader-wrap">
-          <LoadingSpinner message="Loading audit log..." />
+          <LoadingSpinner message={t('common.loading')} />
         </div>
       ) : error ? (
         <ErrorState message={error} onRetry={() => fetchLogs(currentPage)} />
       ) : logs.length === 0 ? (
         <EmptyState
           icon={<ScrollText size={40} />}
-          title="No audit entries yet"
+          title={t('auditLog.noAuditEntries')}
           message={
             actionFilter !== 'ALL'
               ? `No ${ACTION_CONFIG[actionFilter]?.label || actionFilter} events recorded.`
@@ -148,18 +145,18 @@ const AuditLog = () => {
           {/* Read-only notice */}
           <div className="auditlog-notice">
             <ShieldCheck size={14} />
-            <span>Audit records are read-only and cannot be modified or deleted.</span>
+            <span>{t('auditLog.readOnlyNotice')}</span>
           </div>
 
           <div className="auditlog-table-responsive">
             <table className="auditlog-table">
               <thead>
                 <tr>
-                  <th>Timestamp</th>
-                  <th>Admin</th>
-                  <th>Action</th>
-                  <th>Entity</th>
-                  <th>Description</th>
+                  <th>{t('auditLog.thTimestamp')}</th>
+                  <th>{t('auditLog.thAdmin')}</th>
+                  <th>{t('auditLog.thAction')}</th>
+                  <th>{t('auditLog.thEntity')}</th>
+                  <th>{t('auditLog.thDescription')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -195,7 +192,7 @@ const AuditLog = () => {
                       <td>
                         <div className="audit-entity-cell">
                           <span className="audit-entity-type">{log.entityType}</span>
-                          <span className="audit-entity-id">#{log.entityId?.toString().slice(-8).toUpperCase()}</span>
+                          <LoanIdDisplay id={log.entityId} format="short" showCopy={true} />
                         </div>
                       </td>
                       {/* Description */}
@@ -220,7 +217,7 @@ const AuditLog = () => {
                 <ChevronLeft size={16} />
               </button>
               <span className="audit-page-info">
-                Page {currentPage} of {totalPages}
+                {t('auditLog.pageInfo', { current: currentPage, total: totalPages })}
               </span>
               <button
                 className="audit-page-btn"
