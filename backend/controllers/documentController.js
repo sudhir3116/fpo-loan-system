@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const crypto = require('crypto');
 const Document = require('../models/Document');
 const Loan = require('../models/Loan');
 const { uploadToCloudinary, deleteFromCloudinary } = require('../config/cloudinary');
@@ -13,6 +14,14 @@ const VALID_DOC_TYPES = [
   'FINANCIAL_REPORT',
   'OTHER',
 ];
+
+const toDocumentResponse = (document) => {
+  const result = document.toObject ? document.toObject() : document;
+  return {
+    ...result,
+    fileAccessUrl: result._id ? `/api/documents/${result._id}/file` : result.fileUrl,
+  };
+};
 
 // @desc    Upload document for a loan application
 // @route   POST /api/documents/upload
@@ -61,9 +70,17 @@ const uploadDocument = async (req, res) => {
     // ── Step 1: Upload to Cloudinary ──────────────────────────────────────────
     // If the Cloudinary upload fails, abort immediately — no DB record is created.
     let cloudinaryResult;
+    let isPdf = req.file.mimetype === 'application/pdf';
     try {
       cloudinaryResult = await uploadToCloudinary(req.file.buffer, {
         folder: 'fpo_loan_documents',
+        ...(isPdf
+          ? {
+              resource_type: 'raw',
+              access_mode: 'public',
+              public_id: `${crypto.randomUUID()}.pdf`,
+            }
+          : {}),
       });
     } catch (uploadError) {
       console.error('[Cloudinary] Upload failed:', uploadError.message);
@@ -84,14 +101,18 @@ const uploadDocument = async (req, res) => {
         documentType,
         documentName: documentName ? documentName.trim() : req.file.originalname,
         fileUrl: cloudinaryResult.secure_url,
+        cloudinaryPublicId: cloudinaryResult.public_id,
+        cloudinaryResourceType: cloudinaryResult.resource_type || (isPdf ? 'raw' : 'image'),
         fileType: req.file.mimetype,
         status: 'PENDING',
       });
     } catch (dbError) {
       // Best-effort Cloudinary cleanup to prevent orphaned files
       if (cloudinaryResult && cloudinaryResult.public_id) {
-        const resourceType = req.file.mimetype.startsWith('image/') ? 'image' : 'raw';
-        await deleteFromCloudinary(cloudinaryResult.public_id, resourceType);
+        await deleteFromCloudinary(
+          cloudinaryResult.public_id,
+          cloudinaryResult.resource_type || (req.file.mimetype.startsWith('image/') ? 'image' : 'raw')
+        );
       }
       return res.status(500).json({
         status: 'error',
@@ -103,7 +124,7 @@ const uploadDocument = async (req, res) => {
       status: 'success',
       message: 'Document uploaded successfully',
       data: {
-        document,
+        document: toDocumentResponse(document),
       },
     });
   } catch (error) {
@@ -122,12 +143,13 @@ const getMyDocuments = async (req, res) => {
     const documents = await Document.find({ user: req.user._id })
       .populate('loan', 'purpose loanAmount status')
       .sort({ createdAt: -1 });
+    const responseDocuments = documents.map(toDocumentResponse);
 
     return res.status(200).json({
       status: 'success',
-      results: documents.length,
+      results: responseDocuments.length,
       data: {
-        documents,
+        documents: responseDocuments,
       },
     });
   } catch (error) {
@@ -172,12 +194,13 @@ const getLoanDocuments = async (req, res) => {
       .populate('user', 'name email phone')
       .populate('verifiedBy', 'name email phone')
       .sort({ createdAt: -1 });
+    const responseDocuments = documents.map(toDocumentResponse);
 
     return res.status(200).json({
       status: 'success',
-      results: documents.length,
+      results: responseDocuments.length,
       data: {
-        documents,
+        documents: responseDocuments,
       },
     });
   } catch (error) {
@@ -191,6 +214,53 @@ const getLoanDocuments = async (req, res) => {
 // @desc    Get all documents for admin review with status filter
 // @route   GET /api/documents
 // @access  Private (FPO_ADMIN only)
+const getDocumentFile = async (req, res) => {
+  try {
+    const document = await Document.findById(req.params.id);
+    if (!document) {
+      return res.status(404).json({ status: 'fail', message: 'Document not found' });
+    }
+
+    const loan = await Loan.findById(document.loan);
+    if (!loan) {
+      return res.status(404).json({ status: 'fail', message: 'Loan application not found' });
+    }
+
+    if (req.user.role === 'FARMER' && loan.farmer.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        status: 'fail',
+        message: 'Forbidden: You do not have permission to access this document',
+      });
+    }
+
+    const fileUrl = document.fileUrl;
+    if (!fileUrl) {
+      return res.status(404).json({ status: 'fail', message: 'Document file not found' });
+    }
+
+    const response = await fetch(fileUrl, {
+      method: 'GET',
+      headers: { 'Accept': document.fileType || 'application/octet-stream' },
+    });
+    if (!response.ok) {
+      return res.status(502).json({ status: 'error', message: 'Document file is unavailable' });
+    }
+
+    const fileBuffer = Buffer.from(await response.arrayBuffer());
+    if (fileBuffer.length === 0) {
+      return res.status(502).json({ status: 'error', message: 'Document file is empty' });
+    }
+
+    res.status(200);
+    res.setHeader('Content-Type', document.fileType || 'application/octet-stream');
+    res.setHeader('Content-Length', fileBuffer.length);
+    res.setHeader('Content-Disposition', `inline; filename="${document.documentName.replace(/[\r\n\"/\\]/g, '_')}"`);
+    return res.send(fileBuffer);
+  } catch (error) {
+    return res.status(500).json({ status: 'error', message: error.message || 'Server error retrieving document file' });
+  }
+};
+
 const getAllDocuments = async (req, res) => {
   try {
     const { status } = req.query;
@@ -212,12 +282,13 @@ const getAllDocuments = async (req, res) => {
       .populate('loan', 'purpose status loanAmount')
       .populate('verifiedBy', 'name email phone')
       .sort({ createdAt: -1 });
+    const responseDocuments = documents.map(toDocumentResponse);
 
     return res.status(200).json({
       status: 'success',
-      results: documents.length,
+      results: responseDocuments.length,
       data: {
-        documents,
+        documents: responseDocuments,
       },
     });
   } catch (error) {
@@ -347,6 +418,7 @@ module.exports = {
   uploadDocument,
   getMyDocuments,
   getLoanDocuments,
+  getDocumentFile,
   getAllDocuments,
   verifyDocument,
   rejectDocument,

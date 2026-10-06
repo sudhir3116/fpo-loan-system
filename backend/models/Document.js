@@ -35,6 +35,14 @@ const documentSchema = new mongoose.Schema(
       required: [true, 'File URL is required'],
       trim: true,
     },
+    cloudinaryPublicId: {
+      type: String,
+      trim: true,
+    },
+    cloudinaryResourceType: {
+      type: String,
+      trim: true,
+    },
     fileType: {
       type: String,
       trim: true,

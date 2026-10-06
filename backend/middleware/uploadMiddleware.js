@@ -1,13 +1,23 @@
+const path = require('path');
 const multer = require('multer');
 
 // Memory storage
 const storage = multer.memoryStorage();
 
-// File filter (PDF, JPG, JPEG, PNG)
-const fileFilter = (req, file, cb) => {
-  const allowedMimeTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
+const MIME_TO_EXTS = {
+  'application/pdf': ['.pdf'],
+  'image/jpeg': ['.jpg', '.jpeg'],
+  'image/jpg': ['.jpg', '.jpeg'],
+  'image/png': ['.png'],
+};
 
-  if (allowedMimeTypes.includes(file.mimetype)) {
+// File filter (PDF, JPG, JPEG, PNG) — MIME and extension must agree
+const fileFilter = (req, file, cb) => {
+  const allowedMimeTypes = Object.keys(MIME_TO_EXTS);
+  const ext = path.extname(file.originalname || '').toLowerCase();
+  const allowedExts = MIME_TO_EXTS[file.mimetype];
+
+  if (allowedMimeTypes.includes(file.mimetype) && allowedExts && allowedExts.includes(ext)) {
     cb(null, true);
   } else {
     const error = new Error('Invalid file type. Only PDF, JPG, JPEG, and PNG files are allowed.');

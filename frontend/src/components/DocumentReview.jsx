@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ShieldCheck,
@@ -23,6 +23,9 @@ const DocumentReview = ({ documents = [], onRefresh, className = '' }) => {
   const { showSuccess, showError } = useToast();
 
   const [activePreviewDoc, setActivePreviewDoc] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState('');
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState('');
   const [activeVerifyDoc, setActiveVerifyDoc] = useState(null);
   const [activeRejectDoc, setActiveRejectDoc] = useState(null);
   const [rejectionReason, setRejectionReason] = useState('');
@@ -38,6 +41,29 @@ const DocumentReview = ({ documents = [], onRefresh, className = '' }) => {
       default: return t('documents.otherDoc');
     }
   };
+
+  const loadPreview = async (doc) => {
+    setActivePreviewDoc(doc);
+    setPreviewUrl('');
+    setPreviewError('');
+    setPreviewLoading(true);
+
+    try {
+      const response = await documentAPI.getDocumentFile(doc._id);
+      const blobUrl = URL.createObjectURL(response.data);
+      setPreviewUrl(blobUrl);
+    } catch (err) {
+      setPreviewError(err.response?.data?.message || t('common.error'));
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
 
   // Execute Document Verification (PENDING -> VERIFIED)
   const handleConfirmVerify = async () => {
@@ -142,7 +168,7 @@ const DocumentReview = ({ documents = [], onRefresh, className = '' }) => {
                   {/* View / Preview Button */}
                   {doc.fileUrl && (
                     <button
-                      onClick={() => setActivePreviewDoc(doc)}
+                      onClick={() => loadPreview(doc)}
                       className="btn btn-secondary doc-action-btn view-btn"
                       title={t('common.view')}
                     >
@@ -202,11 +228,20 @@ const DocumentReview = ({ documents = [], onRefresh, className = '' }) => {
             </div>
 
             <div className="preview-modal-body">
-              {activePreviewDoc.fileType?.startsWith('image/') ||
-              activePreviewDoc.fileUrl?.match(/\.(jpg|jpeg|png|webp)/i) ? (
+              {previewLoading ? (
+                <div className="no-documents-placeholder">
+                  <Loader2 size={28} className="spinning" />
+                  <p>{t('documents.loadingDocs')}</p>
+                </div>
+              ) : previewError ? (
+                <div className="no-documents-placeholder">
+                  <AlertTriangle size={28} />
+                  <p>{previewError}</p>
+                </div>
+              ) : activePreviewDoc.fileType?.startsWith('image/') ? (
                 <div className="image-preview-container">
                   <img
-                    src={activePreviewDoc.fileUrl}
+                    src={previewUrl}
                     alt={activePreviewDoc.documentName}
                     className="doc-preview-image"
                   />
@@ -214,7 +249,7 @@ const DocumentReview = ({ documents = [], onRefresh, className = '' }) => {
               ) : (
                 <div className="pdf-preview-container">
                   <iframe
-                    src={activePreviewDoc.fileUrl}
+                    src={previewUrl}
                     title={activePreviewDoc.documentName}
                     className="doc-preview-iframe"
                   />
@@ -223,15 +258,18 @@ const DocumentReview = ({ documents = [], onRefresh, className = '' }) => {
             </div>
 
             <div className="modal-footer preview-footer">
-              <a
-                href={activePreviewDoc.fileUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn btn-secondary"
-              >
-                <ExternalLink size={14} />
-                <span>{t('documents.viewDocument')}</span>
-              </a>
+              {previewUrl && (
+                <a
+                  href={previewUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  download={activePreviewDoc.documentName}
+                  className="btn btn-secondary"
+                >
+                  <ExternalLink size={14} />
+                  <span>{t('documents.viewDocument')}</span>
+                </a>
+              )}
               <button className="btn btn-secondary" onClick={() => setActivePreviewDoc(null)}>
                 {t('common.close')}
               </button>

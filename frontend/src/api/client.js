@@ -82,6 +82,7 @@ export const documentAPI = {
   getAllDocuments: (params) => apiClient.get('/documents', { params }),
   getMyDocuments: () => apiClient.get('/documents/my'),
   getLoanDocuments: (loanId) => apiClient.get(`/documents/loan/${loanId}`),
+  getDocumentFile: (id) => apiClient.get(`/documents/${id}/file`, { responseType: 'blob' }),
   verifyDocument: (id) => apiClient.put(`/documents/${id}/verify`),
   rejectDocument: (id, body) => apiClient.put(`/documents/${id}/reject`, body),
 };

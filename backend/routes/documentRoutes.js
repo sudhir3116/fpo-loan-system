@@ -4,6 +4,7 @@ const {
   uploadDocument,
   getMyDocuments,
   getLoanDocuments,
+  getDocumentFile,
   getAllDocuments,
   verifyDocument,
   rejectDocument,
@@ -18,6 +19,7 @@ router.get('/my', protect, authorize('FARMER'), getMyDocuments);
 
 // Shared Route (FARMER can access own loan documents, FPO_ADMIN can access any)
 router.get('/loan/:loanId', protect, authorize('FARMER', 'FPO_ADMIN'), getLoanDocuments);
+router.get('/:id/file', protect, authorize('FARMER', 'FPO_ADMIN'), getDocumentFile);
 
 // FPO Admin Routes
 router.get('/', protect, authorize('FPO_ADMIN'), getAllDocuments);

@@ -11,6 +11,8 @@ const AUDIT_ACTIONS = [
   'LOAN_UNDER_REVIEW',
   // Repayment actions
   'REPAYMENT_RECORDED',
+  // Account actions
+  'USER_KYC_UPDATED',
 ];
 
 const auditLogSchema = new mongoose.Schema(
