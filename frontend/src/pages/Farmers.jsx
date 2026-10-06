@@ -19,6 +19,7 @@ import {
   Clock,
 } from 'lucide-react';
 import { loanAPI, documentAPI } from '../api/client';
+import { openDocumentPreview } from '../utils/documentPreview';
 import {
   PageHeader,
   DataTable,
@@ -566,15 +567,14 @@ const Farmers = () => {
                           )}
 
                           {doc.fileUrl && (
-                            <a
-                              href={doc.fileUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
+                            <button
+                              type="button"
                               className="btn btn-secondary view-doc-link"
+                              onClick={() => openDocumentPreview(doc)}
                             >
                               <ExternalLink size={14} />
                               <span>{t('documents.viewDocument')}</span>
-                            </a>
+                            </button>
                           )}
                         </div>
                       ))}

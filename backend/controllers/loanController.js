@@ -1,6 +1,22 @@
 const mongoose = require('mongoose');
 const Loan = require('../models/Loan');
 const { recordAuditLog } = require('./auditController');
+const { assertLoanTransition } = require('../utils/loanStateMachine');
+const { publicServerError } = require('../utils/publicError');
+const { getNotificationService } = require('../services/notificationService');
+
+const failFrom = (error, res, fallback) => {
+  if (error.statusCode) {
+    return res.status(error.statusCode).json({
+      status: 'fail',
+      message: error.message,
+    });
+  }
+  return res.status(500).json({
+    status: 'error',
+    message: publicServerError(error, fallback),
+  });
+};
 
 // @desc    Submit a new loan application
 // @route   POST /api/loans

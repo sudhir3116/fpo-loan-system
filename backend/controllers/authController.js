@@ -1,6 +1,8 @@
 const User = require('../models/User');
 const generateToken = require('../utils/generateToken');
 const { OAuth2Client } = require('google-auth-library');
+const { publicServerError } = require('../utils/publicError');
+const { getNotificationService } = require('../services/notificationService');
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -19,10 +21,23 @@ const register = async (req, res) => {
       });
     }
 
-    // Role check & Security Safeguard
+    if (String(password).length < 8) {
+      return res.status(400).json({
+        status: 'fail',
+        message: 'Password must be at least 8 characters',
+      });
+    }
+
+    // Role check & Security Safeguard — never trust client role without ADMIN_SECRET_KEY
     let userRole = 'FARMER';
     if (role && role.toUpperCase() === 'FPO_ADMIN') {
-      const adminSecret = process.env.ADMIN_SECRET_KEY || 'fpo_admin_secret_key_2026';
+      const adminSecret = process.env.ADMIN_SECRET_KEY;
+      if (!adminSecret) {
+        return res.status(500).json({
+          status: 'error',
+          message: 'Admin registration is not configured',
+        });
+      }
       if (!req.body.adminSecretKey || req.body.adminSecretKey !== adminSecret) {
         return res.status(403).json({
           status: 'fail',
@@ -56,6 +71,19 @@ const register = async (req, res) => {
     // Generate JWT
     const token = generateToken(user._id, user.role);
 
+    try {
+      await getNotificationService().notify({
+        userId: user._id,
+        type: 'USER_REGISTERED',
+        title: 'Welcome to the FPO loan portal',
+        body: 'Your account was created successfully. You can now apply for a loan and upload documents.',
+        entityType: 'User',
+        entityId: user._id,
+      });
+    } catch (notifyErr) {
+      console.error('[notify] USER_REGISTERED', notifyErr.message);
+    }
+
     // Response user payload without password
     const userPayload = {
       _id: user._id,
@@ -81,7 +109,7 @@ const register = async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       status: 'error',
-      message: error.message || 'Server error during registration',
+      message: publicServerError(error, 'Server error during registration'),
     });
   }
 };
@@ -155,7 +183,7 @@ const login = async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       status: 'error',
-      message: error.message || 'Server error during login',
+      message: publicServerError(error, 'Server error during login'),
     });
   }
 };
@@ -174,7 +202,7 @@ const getMe = async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       status: 'error',
-      message: error.message || 'Server error fetching user profile',
+      message: publicServerError(error, 'Server error fetching user profile'),
     });
   }
 };
@@ -289,7 +317,7 @@ const googleAuth = async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       status: 'error',
-      message: error.message || 'Server error during Google authentication',
+      message: publicServerError(error, 'Server error during Google authentication'),
     });
   }
 };

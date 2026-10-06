@@ -41,7 +41,7 @@ const getAllAuditLogs = async (req, res) => {
       const validActions = [
         'DOCUMENT_VERIFIED', 'DOCUMENT_REJECTED',
         'LOAN_APPROVED', 'LOAN_DISBURSED', 'LOAN_REJECTED', 'LOAN_UNDER_REVIEW',
-        'REPAYMENT_RECORDED',
+        'REPAYMENT_RECORDED', 'USER_KYC_UPDATED',
       ];
       if (!validActions.includes(upperAction)) {
         return res.status(400).json({

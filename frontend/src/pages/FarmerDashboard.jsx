@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { loanAPI, repaymentAPI, documentAPI } from '../api/client';
+import { openDocumentPreview } from '../utils/documentPreview';
 import {
   Sprout,
   LogOut,
@@ -343,15 +344,14 @@ const FarmerDashboard = () => {
                             <td>{new Date(doc.createdAt).toLocaleDateString()}</td>
                             <td>
                               {doc.fileUrl ? (
-                                <a
-                                  href={doc.fileUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
+                                <button
+                                  type="button"
                                   className="view-link"
+                                  onClick={() => openDocumentPreview(doc)}
                                 >
                                   <span>{t('common.view')}</span>
                                   <ExternalLink size={14} />
-                                </a>
+                                </button>
                               ) : (
                                 '—'
                               )}
